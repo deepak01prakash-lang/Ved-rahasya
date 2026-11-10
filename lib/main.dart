@@ -54,12 +54,40 @@ class _HomeScreenState extends State<HomeScreen> {
   int japCount = 0;
   int tab = 0;
   final Set<String> bookmarks = {};
+  Map<String, int> japHistory = {};
   bool japLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _loadDailyJap();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('saved_bookmarks') ?? <String>[];
+    final rawHistory = prefs.getString('jap_history') ?? '{}';
+    Map<String, int> history = {};
+    try {
+      final decoded = jsonDecode(rawHistory) as Map<String, dynamic>;
+      history = decoded.map((key, value) => MapEntry(key, (value as num).toInt()));
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      bookmarks
+        ..clear()
+        ..addAll(saved);
+      japHistory = history;
+    });
+  }
+
+  Future<void> _toggleBookmark(String key) async {
+    setState(() {
+      if (!bookmarks.add(key)) bookmarks.remove(key);
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('saved_bookmarks', bookmarks.toList());
   }
 
   String _todayKey() {
@@ -87,6 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('jap_date', _todayKey());
     await prefs.setInt('jap_count', japCount);
+    japHistory[_todayKey()] = japCount;
+    await prefs.setString('jap_history', jsonEncode(japHistory));
   }
 
   String tr(String hi, String sa, String en) =>
@@ -287,9 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Divider(height: 22),
               const Text('अर्थ: तुम्हारा अधिकार कर्म करने में है, उसके फलों में नहीं।', textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
               TextButton.icon(
-                onPressed: () => setState(() {
-                  bookmarks.contains('gita247') ? bookmarks.remove('gita247') : bookmarks.add('gita247');
-                }),
+                onPressed: () => _toggleBookmark('gita247'),
                 icon: Icon(bookmarks.contains('gita247') ? Icons.bookmark : Icons.bookmark_border),
                 label: Text(bookmarks.contains('gita247') ? 'बुकमार्क किया गया' : 'श्लोक सहेजें'),
               ),
@@ -325,6 +353,29 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ]),
         ),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(child: Card(
+            child: ListTile(
+              leading: const Icon(Icons.bookmarks_outlined, color: Color(0xFF8B4D20)),
+              title: const Text('मेरे बुकमार्क', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              subtitle: Text(bookmarks.length.toString() + ' सहेजी सामग्री', style: const TextStyle(fontSize: 11)),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => SavedItemsPage(savedGita247: bookmarks.contains('gita247')),
+              )),
+            ),
+          )),
+          Expanded(child: Card(
+            child: ListTile(
+              leading: const Icon(Icons.insights_outlined, color: Color(0xFF8B4D20)),
+              title: const Text('जाप इतिहास', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              subtitle: const Text('दैनिक प्रगति देखें', style: TextStyle(fontSize: 11)),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => JapHistoryPage(history: Map<String, int>.from(japHistory)),
+              )),
+            ),
+          )),
+        ]),
         const SizedBox(height: 18),
         Card(
           elevation: 0,
@@ -1045,6 +1096,66 @@ class GitaVerseDetailPage extends StatelessWidget {
             style: TextStyle(fontSize: 12, height: 1.6, color: Colors.brown)))),
         ],
       ),
+    );
+  }
+}
+
+
+class SavedItemsPage extends StatelessWidget {
+  final bool savedGita247;
+  const SavedItemsPage({super.key, required this.savedGita247});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('मेरे बुकमार्क')),
+      body: savedGita247
+          ? ListView(padding: const EdgeInsets.all(16), children: const [
+              Card(child: Padding(
+                padding: EdgeInsets.all(18),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('श्रीमद्भगवद्गीता 2.47', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF754414))),
+                  SizedBox(height: 10),
+                  Text('कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।\nमा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥',
+                    textAlign: TextAlign.center, style: TextStyle(fontSize: 17, height: 1.8)),
+                  SizedBox(height: 8),
+                  Text('अर्थ: तुम्हारा अधिकार कर्म करने में है, उसके फलों में नहीं।'),
+                ]),
+              )),
+            ])
+          : const Center(child: Text('अभी कोई सामग्री सहेजी नहीं गई है।')),
+    );
+  }
+}
+
+class JapHistoryPage extends StatelessWidget {
+  final Map<String, int> history;
+  const JapHistoryPage({super.key, required this.history});
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = history.entries.toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
+    final total = entries.fold<int>(0, (sum, item) => sum + item.value);
+    return Scaffold(
+      appBar: AppBar(title: const Text('दैनिक जाप इतिहास')),
+      body: entries.isEmpty
+          ? const Center(child: Text('जाप शुरू करें, आपकी दैनिक प्रगति यहाँ दिखेगी।'))
+          : ListView(padding: const EdgeInsets.all(16), children: [
+              Card(child: ListTile(
+                leading: const Icon(Icons.spa, color: Color(0xFF8B4D20), size: 30),
+                title: const Text('कुल दर्ज जाप', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(total.toString() + ' जाप • ' + entries.length.toString() + ' दिन'),
+              )),
+              const SizedBox(height: 8),
+              ...entries.map((entry) => Card(
+                child: ListTile(
+                  leading: const Icon(Icons.calendar_today_outlined, color: Color(0xFF8B4D20)),
+                  title: Text(entry.key),
+                  trailing: Text(entry.value.toString() + ' जाप', style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              )),
+            ]),
     );
   }
 }
