@@ -113,94 +113,158 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _home() {
+    final categories = <Map<String, dynamic>>[
+      {'title': 'चारों वेद', 'subtitle': 'ऋग् • यजुः • साम • अथर्व', 'icon': Icons.menu_book_rounded, 'tab': 1},
+      {'title': 'भगवद्गीता', 'subtitle': '18 अध्याय • कर्म, ज्ञान, भक्ति', 'icon': Icons.auto_stories_rounded, 'tab': 2},
+      {'title': 'उपनिषद', 'subtitle': 'आत्मा और ब्रह्म का ज्ञान', 'icon': Icons.self_improvement_rounded, 'tab': 3},
+      {'title': 'मंत्र एवं जाप', 'subtitle': 'मंत्र, साधना और एकाग्रता', 'icon': Icons.spa_rounded, 'tab': 4},
+    ];
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
       children: [
         Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
             gradient: const LinearGradient(
-              colors: [Color(0xFF492A17), Color(0xFF8C4D1D)],
+              colors: [Color(0xFF24150F), Color(0xFF633718), Color(0xFF9B5B25)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(22),
+            boxShadow: const [BoxShadow(color: Color(0x3324150F), blurRadius: 18, offset: Offset(0, 8))],
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('ॐ', style: TextStyle(fontSize: 42, color: Color(0xFFFFD47C))),
-            Text(tr('अपने भीतर के ज्ञान को पहचानें।', 'आत्मानं विद्धि।', 'Discover the wisdom within.'),
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            Row(children: [
+              Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(color: const Color(0x33FFD98A), borderRadius: BorderRadius.circular(16)),
+                child: const Icon(Icons.self_improvement_rounded, color: Color(0xFFFFD98A), size: 30),
+              ),
+              const Spacer(),
+              const Text('ज्ञान • साधना • संस्कृति', style: TextStyle(color: Color(0xFFFFE5B5), fontSize: 11, letterSpacing: 1)),
+            ]),
+            const SizedBox(height: 22),
+            const Text('॥ ॐ ॥', style: TextStyle(color: Color(0xFFFFD98A), fontSize: 34, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            const Text('वेद • उपनिषद • गीता • मंत्र • ध्यान',
-                style: TextStyle(color: Color(0xFFFFE4AE))),
+            const Text('सनातन ज्ञान की\nएक क्रमबद्ध यात्रा', style: TextStyle(color: Colors.white, fontSize: 27, height: 1.22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            const Text('वेदों से उपनिषदों तक, गीता से दर्शन और साधना तक — अध्ययन करें मूल संदर्भों के साथ।',
+              style: TextStyle(color: Color(0xFFFFEBD0), height: 1.55, fontSize: 14)),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFFD98A), foregroundColor: const Color(0xFF382012)),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GranthaLibraryPage())),
+              icon: const Icon(Icons.explore_outlined),
+              label: const Text('सम्पूर्ण ग्रंथालय देखें'),
+            ),
           ]),
         ),
-        const SizedBox(height: 18),
-        Text(tr('आज का श्लोक', 'अद्यतनः श्लोकः', 'Verse of the day'),
-            style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 22),
+        Row(children: [
+          const Expanded(child: Text('ज्ञान के प्रमुख विभाग', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF422716)))),
+          Text('LIBRARY', style: TextStyle(color: Colors.brown.shade400, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+        ]),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: categories.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, crossAxisSpacing: 11, mainAxisSpacing: 11, childAspectRatio: 1.27,
+          ),
+          itemBuilder: (context, index) {
+            final item = categories[index];
+            return Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => setState(() => tab = item['tab'] as int),
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Container(
+                      width: 42, height: 42,
+                      decoration: BoxDecoration(color: const Color(0xFFFFEBCB), borderRadius: BorderRadius.circular(14)),
+                      child: Icon(item['icon'] as IconData, color: const Color(0xFF8B4D20), size: 24),
+                    ),
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(item['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF422716))),
+                      const SizedBox(height: 3),
+                      Text(item['subtitle'] as String, maxLines: 2, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, height: 1.3, color: Colors.brown.shade500)),
+                    ]),
+                  ]),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 22),
+        const Text('आज का श्लोक', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF422716))),
+        const SizedBox(height: 10),
         Card(
+          elevation: 0,
+          color: const Color(0xFFFFF0D7),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFFEBD5B2))),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             child: Column(children: [
               const Text('कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।\nमा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, height: 1.7, color: Color(0xFF754414))),
+                textAlign: TextAlign.center, style: TextStyle(fontSize: 17, height: 1.8, color: Color(0xFF633718), fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              const Text('श्रीमद्भगवद्गीता 2.47', style: TextStyle(color: Colors.brown)),
-              const Divider(),
-              Text(tr('अर्थ: तुम्हारा अधिकार कर्म करने में है, उसके फलों में नहीं।',
-                  'कर्मणि एव तव अधिकारः, फलेषु न कदाचन।',
-                  'Your focus is on action, not on its fruits.')),
+              const Text('श्रीमद्भगवद्गीता 2.47', style: TextStyle(fontSize: 12, color: Colors.brown)),
+              const Divider(height: 22),
+              const Text('अर्थ: तुम्हारा अधिकार कर्म करने में है, उसके फलों में नहीं।', textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
               TextButton.icon(
                 onPressed: () => setState(() {
                   bookmarks.contains('gita247') ? bookmarks.remove('gita247') : bookmarks.add('gita247');
                 }),
                 icon: Icon(bookmarks.contains('gita247') ? Icons.bookmark : Icons.bookmark_border),
-                label: Text(bookmarks.contains('gita247') ? 'सहेजा गया' : 'बुकमार्क करें'),
+                label: Text(bookmarks.contains('gita247') ? 'बुकमार्क किया गया' : 'श्लोक सहेजें'),
               ),
             ]),
           ),
         ),
-        const SizedBox(height: 18),
-        Text(tr('धर्म ज्ञान के विभाग', 'धर्मज्ञानविभागाः', 'Explore knowledge'),
-            style: Theme.of(context).textTheme.titleLarge),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1.5,
-          children: [
-            _tile('चारों वेद', Icons.menu_book, 1),
-            _tile('भगवद्गीता', Icons.auto_stories, 2),
-            _tile('उपनिषद', Icons.library_books, 3),
-            _tile('मंत्र एवं जाप', Icons.spa, 4),
-          ],
+        const SizedBox(height: 22),
+        Row(children: [
+          const Expanded(child: Text('दैनिक साधना', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF422716)))),
+          const Text('JAPA COUNTER', style: TextStyle(color: Color(0xFF9B744B), fontSize: 10, letterSpacing: 1.2)),
+        ]),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+          child: Row(children: [
+            Container(
+              width: 54, height: 54,
+              decoration: BoxDecoration(color: const Color(0xFFFFEBCB), borderRadius: BorderRadius.circular(17)),
+              child: const Icon(Icons.spa_rounded, color: Color(0xFF8B4D20), size: 30),
+            ),
+            const SizedBox(width: 13),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('ॐ नमः शिवाय', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF633718))),
+              Text('$japCount जाप आज', style: TextStyle(color: Colors.brown.shade500, fontSize: 12)),
+            ])),
+            IconButton(onPressed: () => setState(() => japCount = 0), tooltip: 'रीसेट', icon: const Icon(Icons.refresh)),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF754414), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 15)),
+              onPressed: () => setState(() => japCount++),
+              child: const Text('+1 जाप'),
+            ),
+          ]),
         ),
         const SizedBox(height: 18),
-        Text(tr('दैनिक मंत्र जाप', 'दैनिक मन्त्रजपः', 'Daily mantra counter'),
-            style: Theme.of(context).textTheme.titleLarge),
-        Card(child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            const Text('ॐ नमः शिवाय', style: TextStyle(fontSize: 24, color: Color(0xFF8C4D1D), fontWeight: FontWeight.bold)),
-            Text('$japCount', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold)),
-            const Text('आज का जाप'),
-            const SizedBox(height: 8),
-            Wrap(spacing: 8, children: [
-              OutlinedButton(onPressed: () => setState(() => japCount = 0), child: const Text('रीसेट')),
-              FilledButton.icon(onPressed: () => setState(() => japCount++), icon: const Icon(Icons.add), label: const Text('एक जाप')),
-            ]),
-          ]),
-        )),
-        const SizedBox(height: 18),
         Card(
+          elevation: 0,
+          color: const Color(0xFF492A17),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: ListTile(
-            leading: const CircleAvatar(backgroundColor: Color(0xFFFFEBCB), child: Icon(Icons.account_balance, color: Color(0xFF754414))),
-            title: const Text('रामायण, महाभारत एवं दर्शन', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('महाकाव्य, पुराण, योग और भारतीय दर्शन का क्रमबद्ध परिचय'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 9),
+            leading: const Icon(Icons.account_balance_rounded, color: Color(0xFFFFD98A), size: 30),
+            title: const Text('महाग्रंथ एवं भारतीय दर्शन', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            subtitle: const Text('रामायण • महाभारत • पुराण • योग • वेदान्त', style: TextStyle(color: Color(0xFFFFE5B5), fontSize: 12)),
+            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFFFFD98A), size: 16),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GranthaLibraryPage())),
           ),
         ),
