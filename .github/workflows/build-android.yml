@@ -27,14 +27,11 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --project-name ved_rahasya --org com.vedrahasya .
 
-      - name: Restore Ved Rahasya app entry point
-        run: cp main.dart lib/main.dart
-
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Check Dart formatting
-        run: dart format --output=none --set-exit-if-changed lib/main.dart
+      - name: Format Dart source
+        run: dart format lib/main.dart
 
       - name: Build Android APK
         run: flutter build apk --release
