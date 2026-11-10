@@ -490,8 +490,15 @@ class _GranthaLibraryPageState extends State<GranthaLibraryPage> {
   }
 }
 
-class GitaLibraryPage extends StatelessWidget {
+class GitaLibraryPage extends StatefulWidget {
   const GitaLibraryPage({super.key});
+
+  @override
+  State<GitaLibraryPage> createState() => _GitaLibraryPageState();
+}
+
+class _GitaLibraryPageState extends State<GitaLibraryPage> {
+  String searchQuery = '';
 
   static const chapters = <({int number, String title, String transliteration, int verses, String summary, String topics})>[
     (number: 1, title: 'अर्जुनविषादयोग', transliteration: 'Arjuna Vishada Yoga', verses: 47, summary: 'अर्जुन का विषाद और धर्म-संकट', topics: 'कर्तव्य-संघर्ष • करुणा • मोह • मार्गदर्शन की आवश्यकता'),
@@ -516,46 +523,79 @@ class GitaLibraryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-      children: [
-        Text('श्रीमद्भगवद्गीता', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: const Color(0xFF754414), fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
-        const Text('महाभारत के भीष्मपर्व में स्थित श्रीकृष्ण और अर्जुन का संवाद। अध्याय चुनकर क्रमबद्ध अध्ययन आरम्भ करें।', style: TextStyle(fontSize: 15, height: 1.6)),
-        const SizedBox(height: 14),
-        Card(
-          color: const Color(0xFFFFEBCB),
-          child: const Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('18 अध्याय  •  700 श्लोक', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF754414))),
-              SizedBox(height: 6),
-              Text('पारंपरिक 700-श्लोक पाठ-क्रम के अनुसार। कुछ संस्करणों में अध्याय 13 की गणना के कारण 701 की संख्या भी मिलती है; पाठ-संस्करण का उल्लेख अध्ययन सामग्री में किया जाएगा।', style: TextStyle(height: 1.5)),
-            ]),
+    final q = searchQuery.trim().toLowerCase();
+    final filtered = chapters.where((chapter) =>
+      q.isEmpty ||
+      chapter.title.toLowerCase().contains(q) ||
+      chapter.transliteration.toLowerCase().contains(q) ||
+      chapter.summary.toLowerCase().contains(q) ||
+      chapter.topics.toLowerCase().contains(q) ||
+      chapter.number.toString() == q
+    ).toList();
+    return Scaffold(
+      appBar: AppBar(title: const Text('श्रीमद्भगवद्गीता')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+        children: [
+          Text('श्रीमद्भगवद्गीता', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: const Color(0xFF754414), fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          const Text('महाभारत के भीष्मपर्व में स्थित श्रीकृष्ण और अर्जुन का संवाद। अध्याय चुनकर क्रमबद्ध अध्ययन आरम्भ करें।', style: TextStyle(fontSize: 15, height: 1.6)),
+          const SizedBox(height: 14),
+          Card(
+            color: const Color(0xFFFFEBCB),
+            child: const Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('18 अध्याय  •  700 श्लोक', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF754414))),
+                SizedBox(height: 6),
+                Text('पारंपरिक 700-श्लोक पाठ-क्रम के अनुसार। कुछ संस्करणों में अध्याय 13 की गणना के कारण 701 की संख्या भी मिलती है; पाठ-संस्करण का उल्लेख अध्ययन सामग्री में किया जाएगा।', style: TextStyle(height: 1.5)),
+              ]),
+            ),
           ),
-        ),
-        const SizedBox(height: 14),
-        const Text('अध्यायवार अध्ययन', style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ...chapters.map((chapter) => Card(
-          margin: const EdgeInsets.only(bottom: 9),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            leading: CircleAvatar(backgroundColor: const Color(0xFFFFEBCB), foregroundColor: const Color(0xFF754414), child: Text('${chapter.number}')),
-            title: Text(chapter.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('${chapter.transliteration}\n${chapter.summary}', maxLines: 3, overflow: TextOverflow.ellipsis),
-            isThreeLine: true,
-            trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text('${chapter.verses}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-              const Text('श्लोक', style: TextStyle(fontSize: 11)),
-            ]),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GitaChapterPage(chapter: chapter))),
+          const SizedBox(height: 14),
+          TextField(
+            onChanged: (value) => setState(() => searchQuery = value),
+            decoration: InputDecoration(
+              hintText: 'अध्याय का नाम, विषय या नंबर खोजें…',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: searchQuery.isEmpty ? null : IconButton(
+                tooltip: 'खोज मिटाएँ',
+                onPressed: () => setState(() => searchQuery = ''),
+                icon: const Icon(Icons.close),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            ),
           ),
-        )),
-        const SizedBox(height: 8),
-        const Text('पाठ-संदर्भ', style: TextStyle(fontWeight: FontWeight.bold)),
-        const Text('श्लोक-संख्या और पाठभेद अलग-अलग परंपरागत संस्करणों में भिन्न हो सकते हैं। इस ऐप में प्रत्येक श्लोक के साथ प्रयुक्त संस्करण और स्रोत स्पष्ट रूप से दिखाए जाएँगे।', style: TextStyle(height: 1.5)),
-      ],
+          const SizedBox(height: 12),
+          Text('${filtered.length} अध्याय मिले', style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          if (filtered.isEmpty)
+            const Card(child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: Text('कोई अध्याय नहीं मिला। दूसरा शब्द या अध्याय नंबर खोजें।')),
+            )),
+          ...filtered.map((chapter) => Card(
+            margin: const EdgeInsets.only(bottom: 9),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              leading: CircleAvatar(backgroundColor: const Color(0xFFFFEBCB), foregroundColor: const Color(0xFF754414), child: Text('${chapter.number}')),
+              title: Text(chapter.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('${chapter.transliteration}\n${chapter.summary}', maxLines: 3, overflow: TextOverflow.ellipsis),
+              isThreeLine: true,
+              trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text('${chapter.verses}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                const Text('श्लोक', style: TextStyle(fontSize: 11)),
+              ]),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GitaChapterPage(chapter: chapter))),
+            ),
+          )),
+          const SizedBox(height: 8),
+          const Text('पाठ-संदर्भ', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('श्लोक-संख्या और पाठभेद अलग-अलग परंपरागत संस्करणों में भिन्न हो सकते हैं। इस ऐप में प्रत्येक श्लोक के साथ प्रयुक्त संस्करण और स्रोत स्पष्ट रूप से दिखाए जाएँगे।', style: TextStyle(height: 1.5)),
+        ],
+      ),
     );
   }
 }
