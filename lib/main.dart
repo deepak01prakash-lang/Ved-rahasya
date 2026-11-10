@@ -359,8 +359,15 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 
-class GranthaLibraryPage extends StatelessWidget {
+class GranthaLibraryPage extends StatefulWidget {
   const GranthaLibraryPage({super.key});
+
+  @override
+  State<GranthaLibraryPage> createState() => _GranthaLibraryPageState();
+}
+
+class _GranthaLibraryPageState extends State<GranthaLibraryPage> {
+  String searchQuery = '';
 
   static const entries = <Map<String, String>>[
     {
@@ -408,10 +415,24 @@ class GranthaLibraryPage extends StatelessWidget {
       'body':'धर्मशास्त्रीय साहित्य में आचार, व्यवहार, प्रायश्चित्त, आश्रम, संस्कार और सामाजिक दायित्वों पर चर्चा है। स्मृतियों और निबन्धों के विधान काल, क्षेत्र, समुदाय और परंपरा के अनुसार अलग-अलग रूप में समझे गए हैं। ऐतिहासिक विधान को आज के कानून या सार्वभौमिक नैतिक आदेश के रूप में सीधे लागू न करें; संदर्भ, इतिहास और वर्तमान संवैधानिक व्यवस्था का ध्यान रखें।',
       'source':'अध्ययन-संदर्भ: धर्मसूत्र, मनुस्मृति, याज्ञवल्क्य स्मृति और आधुनिक अकादमिक अध्ययन'
     },
+    {
+      'title':'अठारह महापुराणों के नाम',
+      'body':'परंपरागत अठारह महापुराणों की प्रसिद्ध सूची है: ब्रह्म, पद्म, विष्णु, शिव, भागवत, नारद, मार्कण्डेय, अग्नि, भविष्य, ब्रह्मवैवर्त, लिंग, वराह, स्कन्द, वामन, कूर्म, मत्स्य, गरुड़ और ब्रह्माण्ड पुराण। सूचियों के क्रम और कुछ नाम-रूपों में परंपरा के अनुसार अंतर मिल सकता है। प्रत्येक पुराण को उसके अपने पाठ, विषय-विन्यास और संप्रदायगत संदर्भ में पढ़ना चाहिए।',
+      'source':'अध्ययन-संदर्भ: पुराण-साहित्य की पारंपरिक अष्टादश महापुराण सूची; संबंधित पुराणों के मूल पाठ'
+    },
+    {
+      'title':'रामायण के सात काण्ड: क्रमिक अध्ययन',
+      'body':'बालकाण्ड में रामकथा की भूमिका और आरम्भिक जीवन; अयोध्याकाण्ड में राज्याभिषेक की तैयारी, वनवास और भरत का प्रसंग; अरण्यकाण्ड में वनजीवन और सीता-हरण; किष्किन्धाकाण्ड में सुग्रीव से मैत्री और सीता की खोज; सुन्दरकाण्ड में हनुमान का लंका-गमन; युद्धकाण्ड में लंका-युद्ध और अयोध्या-वापसी; उत्तरकाण्ड में उत्तरवर्ती कथा आती है। काण्डों के पाठ और उत्तरकाण्ड की स्थिति पर विद्वानों में चर्चा है।',
+      'source':'अध्ययन-संदर्भ: वाल्मीकि रामायण, सात काण्ड; पाठ-परंपरा का तुलनात्मक अध्ययन'
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
+    final q = searchQuery.trim().toLowerCase();
+    final filtered = entries.where((entry) =>
+      q.isEmpty || entry.values.any((value) => value.toLowerCase().contains(q))
+    ).toList();
     return Scaffold(
       appBar: AppBar(title: const Text('महाग्रंथ एवं दर्शन')),
       body: ListView(
@@ -419,9 +440,37 @@ class GranthaLibraryPage extends StatelessWidget {
         children: [
           const Text('सनातन साहित्य का विस्तृत परिचय', style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold, color: Color(0xFF754414))),
           const SizedBox(height: 8),
-          const Text('महाकाव्य, पुराण और दर्शन को उनके मूल संदर्भ, पाठ-परंपरा और अलग-अलग व्याख्याओं के साथ पढ़ें। नीचे किसी विषय को खोलकर अध्ययन करें।', style: TextStyle(fontSize: 15, height: 1.6)),
+          const Text('महाकाव्य, पुराण और दर्शन को उनके मूल संदर्भ, पाठ-परंपरा और अलग-अलग व्याख्याओं के साथ पढ़ें।', style: TextStyle(fontSize: 15, height: 1.6)),
+          const SizedBox(height: 14),
+          TextField(
+            onChanged: (value) => setState(() => searchQuery = value),
+            decoration: InputDecoration(
+              hintText: 'ग्रंथ, विषय या दर्शन खोजें…',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: searchQuery.isEmpty ? null : IconButton(
+                tooltip: 'खोज मिटाएँ',
+                onPressed: () => setState(() => searchQuery = ''),
+                icon: const Icon(Icons.close),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            ),
+          ),
           const SizedBox(height: 12),
-          ...entries.map((entry) => Card(
+          Text('${filtered.length} अध्ययन विषय', style: const TextStyle(color: Colors.brown, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          if (filtered.isEmpty)
+            const Card(child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(children: [
+                Icon(Icons.search_off, size: 34, color: Colors.brown),
+                SizedBox(height: 8),
+                Text('इस शब्द से कोई विषय नहीं मिला।', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('दूसरा शब्द लिखकर खोजें।'),
+              ]),
+            )),
+          ...filtered.map((entry) => Card(
             margin: const EdgeInsets.only(bottom: 10),
             child: ExpansionTile(
               leading: const Icon(Icons.auto_stories, color: Color(0xFFB86B1B)),
