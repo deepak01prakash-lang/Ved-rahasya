@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() => runApp(const VedRahasyaApp());
 
@@ -667,8 +670,174 @@ class GitaChapterPage extends StatelessWidget {
         const Text('इस अध्याय का अध्ययन कैसे करें?', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
         const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('पहले अध्याय का सार पढ़ें। फिर श्लोकों को क्रम से पढ़ते हुए मूल संस्कृत पाठ, पदच्छेद, शब्दार्थ, अनुवाद और भावार्थ का अध्ययन करें। जहाँ अलग-अलग आचार्यों के भाष्य उपलब्ध हों, वहाँ उन्हें अलग-अलग मत के रूप में पढ़ें।', style: TextStyle(height: 1.6)))),
         const SizedBox(height: 12),
-        const Card(child: ListTile(leading: Icon(Icons.menu_book), title: Text('श्लोक-दर-श्लोक सामग्री'), subtitle: Text('प्रमाणित मूलपाठ, पदच्छेद, शब्दार्थ और संदर्भित हिंदी व्याख्या अगले कंटेंट पैक में जोड़ी जाएगी। अभी अप्रमाणित श्लोक-सामग्री नहीं दिखाई जाती।'))),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.menu_book, color: Color(0xFF754414)),
+            title: const Text('इस अध्याय के मूल श्लोक पढ़ें'),
+            subtitle: const Text('मूल संस्कृत पाठ • उच्चारण-सहायक लिप्यंतरण • उपलब्ध हिंदी शब्दार्थ'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => GitaVerseListPage(chapterNumber: chapter.number, chapterTitle: chapter.title),
+            )),
+          ),
+        ),
       ]),
+    );
+  }
+}
+
+
+/// Verse corpus is sourced from the public-domain gita/gita dataset (Unlicense).
+/// Hindi lexical glosses below are original editorial notes and are deliberately
+/// shown only for verses that have been manually reviewed.
+class GitaVerseListPage extends StatefulWidget {
+  const GitaVerseListPage({super.key, required this.chapterNumber, required this.chapterTitle});
+  final int chapterNumber;
+  final String chapterTitle;
+
+  @override
+  State<GitaVerseListPage> createState() => _GitaVerseListPageState();
+}
+
+class _GitaVerseListPageState extends State<GitaVerseListPage> {
+  late Future<List<Map<String, dynamic>>> versesFuture;
+  String query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    versesFuture = _loadVerses();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadVerses() async {
+    final raw = await rootBundle.loadString('assets/data/gita_verses.json');
+    final decoded = jsonDecode(raw) as List<dynamic>;
+    return decoded
+        .cast<Map<String, dynamic>>()
+        .where((v) => v['chapter_number'] == widget.chapterNumber)
+        .toList()
+      ..sort((a, b) => (a['verse_number'] as int).compareTo(b['verse_number'] as int));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = query.trim().toLowerCase();
+    return Scaffold(
+      appBar: AppBar(title: Text('अध्याय ${widget.chapterNumber} • मूल श्लोक')),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: versesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text('श्लोक सामग्री लोड नहीं हो सकी।'));
+          }
+          final all = snapshot.data!;
+          final filtered = all.where((v) {
+            final text = '${v['text']} ${v['transliteration']} ${v['verse_number']}'.toLowerCase();
+            return q.isEmpty || text.contains(q);
+          }).toList();
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(widget.chapterTitle, style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: const Color(0xFF754414), fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              Text('इस अध्याय में ${all.length} श्लोक • मूल संस्कृत पाठ', style: const TextStyle(color: Colors.brown)),
+              const SizedBox(height: 12),
+              TextField(
+                onChanged: (v) => setState(() => query = v),
+                decoration: InputDecoration(
+                  hintText: 'श्लोक संख्या या संस्कृत शब्द खोजें',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: query.isEmpty ? null : IconButton(
+                    onPressed: () => setState(() => query = ''),
+                    icon: const Icon(Icons.close),
+                  ),
+                  filled: true, fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text('${filtered.length} श्लोक मिले', style: const TextStyle(color: Colors.brown)),
+              const SizedBox(height: 8),
+              ...filtered.map((v) => Card(
+                margin: const EdgeInsets.only(bottom: 9),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFFFFEBCB),
+                    foregroundColor: const Color(0xFF754414),
+                    child: Text('${v['verse_number']}'),
+                  ),
+                  title: Text('श्लोक ${widget.chapterNumber}.${v['verse_number']}',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text((v['text'] as String).replaceAll(RegExp(r'\\s+'), ' ').trim(),
+                    maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(height: 1.5, fontSize: 14)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => GitaVerseDetailPage(verse: v),
+                  )),
+                ),
+              )),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class GitaVerseDetailPage extends StatelessWidget {
+  const GitaVerseDetailPage({super.key, required this.verse});
+  final Map<String, dynamic> verse;
+
+  static const Map<String, String> reviewedHindiGlosses = {
+    '1.1': 'धर्मक्षेत्रे — धर्मभूमि में; कुरुक्षेत्रे — कुरुक्षेत्र में; समवेताः — एकत्र हुए; युयुत्सवः — युद्ध की इच्छा रखने वाले; मामकाः — मेरे पुत्र; पाण्डवाः — पाण्डु के पुत्र; च — और; एव — ही/भी; किम् — क्या; अकुर्वत — उन्होंने किया; सञ्जय — हे संजय।',
+    '2.47': 'कर्मणि — कर्मों में; एव — ही; अधिकारः — अधिकार; ते — तुम्हारा; मा — मत; फलेषु — फलों में; कदाचन — कभी भी; मा — मत; कर्मफलहेतुः — कर्मफल को ही उद्देश्य बनाने वाला; भूः — हो; ते — तुम्हारी; सङ्गः — आसक्ति; अस्तु — हो; अकर्मणि — कर्म न करने में।',
+    '2.48': 'योगस्थः — योग में स्थित होकर; कुरु — करो; कर्माणि — कर्म; सङ्गम् — आसक्ति; त्यक्त्वा — त्यागकर; धनञ्जय — हे धनंजय; सिद्धि-असिद्ध्योः — सफलता और असफलता में; समः — समान; भूत्वा — होकर; समत्वम् — समभाव; योगः — योग; उच्यते — कहा जाता है।',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final chapter = verse['chapter_number'] as int;
+    final number = verse['verse_number'] as int;
+    final key = '$chapter.$number';
+    final original = (verse['text'] as String).trim();
+    final transliteration = (verse['transliteration'] as String).trim();
+    final gloss = reviewedHindiGlosses[key];
+    return Scaffold(
+      appBar: AppBar(title: Text('गीता $key')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text('श्रीमद्भगवद्गीता', style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: const Color(0xFF754414), fontWeight: FontWeight.bold)),
+          const SizedBox(height: 14),
+          Card(
+            color: const Color(0xFFFFF0D7),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: SelectableText(original, textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 21, height: 2, color: Color(0xFF492A17), fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text('लिप्यंतरण (उच्चारण में सहायता)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          Card(child: Padding(padding: const EdgeInsets.all(14),
+            child: SelectableText(transliteration, style: const TextStyle(height: 1.7)))),
+          const SizedBox(height: 12),
+          const Text('हिंदी शब्दार्थ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          Card(child: Padding(padding: const EdgeInsets.all(14), child: Text(
+            gloss ?? 'इस श्लोक का पदच्छेद और हिंदी शब्द-दर-शब्द अर्थ संपादकीय सत्यापन के बाद जोड़ा जाएगा। अभी अनुमानित अर्थ नहीं दिया जा रहा है।',
+            style: const TextStyle(fontSize: 16, height: 1.8)))),
+          const SizedBox(height: 12),
+          const Card(child: Padding(padding: EdgeInsets.all(14), child: Text(
+            'पाठ-स्रोत: gita/gita सार्वजनिक डोमेन Sanskrit verse dataset (Unlicense)। मूल पाठ को ऐप में शामिल किया गया है; हिंदी शब्दार्थ अलग से जाँचे और तैयार किए जा रहे हैं। अलग संस्करणों में पाठ/गणना के छोटे अंतर संभव हैं।',
+            style: TextStyle(fontSize: 12, height: 1.6, color: Colors.brown)))),
+        ],
+      ),
     );
   }
 }
