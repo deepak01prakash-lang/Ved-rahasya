@@ -68,15 +68,15 @@ class AstronomyEngine {
 
 /// Lahiri/Chitrapaksha mean ayanamsha reference implementation.
 ///
-/// Uses the 1956 Calendar Reform Committee epoch and a polynomial
+/// Uses a J2000 Lahiri reference value and a polynomial
 /// precession approximation. It is a mean ayanamsha (nutation is not added),
 /// so boundary cases must be cross-checked against a validated ephemeris
 /// before being used for production kundli or Panchanga claims.
 class LahiriAyanamsha {
   const LahiriAyanamsha._();
 
-  static const double _epochJd = 2435553.5; // 1956-03-21 00:00 TT
-  static const double _epochArcSeconds = 23 * 3600 + 15 * 60 + 0.658;
+  static const double _epochJd = 2451545.0; // J2000.0, 2000-01-01 12:00 TT
+  static const double _epochArcSeconds = 23 * 3600 + 51 * 60 + 25.532;
 
   static double meanDegreesAtUtc(DateTime utc) {
     final instant = utc.toUtc();
@@ -93,8 +93,8 @@ class LahiriAyanamsha {
     );
     final centuries = (jd - _epochJd) / 36525.0;
     final arcSeconds = _epochArcSeconds +
-        5028.796195 * centuries +
-        1.1054348 * centuries * centuries;
+        5029.0966 * centuries +
+        1.11161 * centuries * centuries;
     return arcSeconds / 3600.0;
   }
 
