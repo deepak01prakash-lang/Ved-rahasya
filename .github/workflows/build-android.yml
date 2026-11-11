@@ -58,6 +58,24 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --project-name ved_rahasya --org com.vedrahasya .
 
+      - name: Set Android minimum SDK for Firebase Authentication
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          path = Path('android/app/build.gradle.kts')
+          source = path.read_text()
+          updated, count = re.subn(
+              r'minSdk\\s*=\\s*(?:flutter\\.minSdkVersion|\\d+)',
+              'minSdk = 23',
+              source,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit('Could not find Android minSdk setting in generated Gradle file.')
+          path.write_text(updated)
+          PY
+
       - name: Install dependencies
         run: flutter pub get
 
