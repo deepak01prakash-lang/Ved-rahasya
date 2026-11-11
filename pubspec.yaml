@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^2.5.3
+  audioplayers: ^6.5.1
   astronomia: ^1.1.1
 
 dev_dependencies:
@@ -21,3 +22,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/gita_verses.json
+    - assets/audio/ved_rahasya_theme.wav
