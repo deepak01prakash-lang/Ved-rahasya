@@ -100,7 +100,13 @@ class LahiriAyanamsha {
 
   static double siderealLongitude(double tropicalLongitude, DateTime utc) {
     final value = tropicalLongitude - meanDegreesAtUtc(utc);
-    return (value % 360 + 360) % 360;
+    final normalized = (value % 360 + 360) % 360;
+    // Avoid representing a value infinitesimally below 0° as 360° due
+    // to floating-point rounding; the two values are the same boundary.
+    if (normalized < 1e-7 || normalized > 360 - 1e-7) {
+      return 0.0;
+    }
+    return normalized;
   }
 }
 
