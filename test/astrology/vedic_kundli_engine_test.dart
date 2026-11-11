@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ved_rahasya/astrology/vedic_kundli_engine.dart';
 import 'package:ved_rahasya/astrology/graha_drishti.dart';
+import 'package:ved_rahasya/astrology/kundli_interpretation.dart';
 
 void main() {
   group('VedicKundliEngine', () {
@@ -74,6 +75,18 @@ void main() {
       expect(aspects.where((a) => a.fromGraha == 'शनि'), hasLength(3));
       expect(aspects.where((a) => a.fromGraha == 'सूर्य'), hasLength(1));
       expect(aspects.every((a) => a.toHouse >= 1 && a.toHouse <= 12), isTrue);
+    });
+
+    test('house lord analysis covers all twelve houses', () {
+      final chart = engine.calculate(
+        birthUtc: DateTime.utc(1993, 10, 24, 20, 55),
+        latitude: 24.03,
+        longitudeEast: 84.07,
+      );
+      final insights = KundliInterpretation.houseLords(chart);
+      expect(insights, hasLength(12));
+      expect(insights.map((item) => item.house), orderedEquals(List.generate(12, (i) => i + 1)));
+      expect(insights.every((item) => item.placedHouse >= 1 && item.placedHouse <= 12), isTrue);
     });
 
     test('Vimshottari balance and antardasha periods are ordered', () {
