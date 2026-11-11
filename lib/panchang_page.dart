@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 import 'astrology/panchang_engine.dart';
 
 class PanchangPage extends StatefulWidget {
@@ -26,7 +28,11 @@ class _PanchangPageState extends State<PanchangPage> {
     if (latitude == null || longitude == null) {
       throw StateError('पंचांग दिखाने के लिए पहले मेरी जन्म-कुंडली में जन्म-स्थान खोजकर सहेजें।');
     }
-    final now = DateTime.now();
+    tzdata.initializeTimeZones();
+    final zoneId = prefs.getString('profile_timezone_id');
+    final now = zoneId == null
+        ? DateTime.now()
+        : tz.TZDateTime.now(tz.getLocation(zoneId));
     return const PanchangEngine().calculate(
       localDate: DateTime(now.year, now.month, now.day),
       latitude: latitude,
