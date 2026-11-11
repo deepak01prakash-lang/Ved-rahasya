@@ -87,6 +87,11 @@ void main() {
       expect(insights, hasLength(12));
       expect(insights.map((item) => item.house), orderedEquals(List.generate(12, (i) => i + 1)));
       expect(insights.every((item) => item.placedHouse >= 1 && item.placedHouse <= 12), isTrue);
+      final dashaInsight = KundliInterpretation.dashaLord(chart, 'गुरु');
+      expect(dashaInsight.lord, 'गुरु');
+      expect(dashaInsight.house, inInclusiveRange(1, 12));
+      expect(dashaInsight.sign, isNotEmpty);
+      expect(dashaInsight.ruledHouses, isNotEmpty);
     });
 
     test('Vimshottari balance and antardasha periods are ordered', () {
