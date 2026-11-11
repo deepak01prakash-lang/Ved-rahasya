@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'astrology/astronomy_engine.dart';
 import 'astrology/vedic_kundli_engine.dart';
+import 'astrology/kundli_interpretation.dart';
 
 class KundliPage extends StatefulWidget {
   const KundliPage({super.key});
@@ -244,6 +245,32 @@ class _KundliPageState extends State<KundliPage> {
                         ],
                       ),
                   ],
+                ),
+            ])),
+          ),
+          _sectionTitle('भाव अनुसार जीवन के विषय', 'यह प्रत्येक भाव का पारंपरिक क्षेत्र बताता है; ग्रह स्थिति के साथ पढ़ें'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Card(child: Column(children: [
+              for (final house in KundliInterpretation.houses(c))
+                ListTile(
+                  dense: true,
+                  title: Text('भाव ${house.house} • ${house.rashi}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text('${house.theme}\nग्रह: ${house.grahas.isEmpty ? 'कोई ग्रह नहीं' : house.grahas.join('، ')}'),
+                  isThreeLine: true,
+                ),
+            ])),
+          ),
+          _sectionTitle('योग और पारंपरिक ज्योतिषीय संकेत', 'चार्ट में दिखने वाले कुछ प्रमुख संयोजन'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Card(child: Column(children: [
+              for (final item in KundliInterpretation.indicators(c))
+                ListTile(
+                  leading: Icon(item.isPresent ? Icons.check_circle_outline : Icons.remove_circle_outline,
+                    color: item.isPresent ? Colors.green.shade700 : Colors.brown.shade300),
+                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text(item.description + (item.caution == null ? '' : '\n${item.caution}')),
                 ),
             ])),
           ),
