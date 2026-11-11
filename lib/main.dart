@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'rashi_profile_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -258,6 +259,17 @@ class _HomeScreenState extends State<HomeScreen> {
               label: const Text('सम्पूर्ण ग्रंथालय देखें'),
             ),
           ]),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          color: const Color(0xFFFFF0D7),
+          child: ListTile(
+            leading: const Icon(Icons.auto_awesome, color: Color(0xFF8B4D20), size: 30),
+            title: const Text('मेरी राशि और अंक ज्योतिष', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF492A17))),
+            subtitle: const Text('जन्मतिथि • जन्म समय • जन्म स्थान • मूलांक • भाग्यांक • मंत्र'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RashiProfilePage())),
+          ),
         ),
         const SizedBox(height: 22),
         Row(children: [
