@@ -87,12 +87,6 @@ jobs:
           if [[ -n "$ANDROID_UPLOAD_KEYSTORE_BASE64" && -n "$ANDROID_UPLOAD_KEYSTORE_PASSWORD" && -n "$ANDROID_UPLOAD_KEY_ALIAS" && -n "$ANDROID_UPLOAD_KEY_PASSWORD" ]]; then
             KEYSTORE_PATH="$RUNNER_TEMP/ved-rahasya-upload.jks"
             printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
-            cat > android/key.properties <<EOF
-          storePassword=$ANDROID_UPLOAD_KEYSTORE_PASSWORD
-          keyPassword=$ANDROID_UPLOAD_KEY_PASSWORD
-          keyAlias=$ANDROID_UPLOAD_KEY_ALIAS
-          storeFile=$KEYSTORE_PATH
-          EOF
             python3 - <<'PY'
           from pathlib import Path
           path = Path('android/app/build.gradle.kts')
@@ -101,14 +95,12 @@ jobs:
           debug_signing = 'signingConfig = signingConfigs.getByName("debug")'
           if marker not in source or debug_signing not in source:
               raise SystemExit('Unexpected Flutter Gradle template; refusing to guess release-signing edits.')
-          imports = 'import java.io.FileInputStream\\nimport java.util.Properties\\n\\n'
-          source = imports + source
           signing = '''    signingConfigs {
                   create("release") {
-                      keyAlias = "${System.getenv("ANDROID_UPLOAD_KEY_ALIAS")}"
-                      keyPassword = "${System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")}"
-                      storeFile = file("${System.getenv("RUNNER_TEMP")}/ved-rahasya-upload.jks")
-                      storePassword = "${System.getenv("ANDROID_UPLOAD_KEYSTORE_PASSWORD")}"
+                      keyAlias = System.getenv("ANDROID_UPLOAD_KEY_ALIAS")
+                      keyPassword = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")
+                      storeFile = file(System.getenv("RUNNER_TEMP") + "/ved-rahasya-upload.jks")
+                      storePassword = System.getenv("ANDROID_UPLOAD_KEYSTORE_PASSWORD")
                   }
               }
 
@@ -129,6 +121,9 @@ jobs:
         env:
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          ANDROID_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: |
           flutter build appbundle --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
           flutter build apk --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
