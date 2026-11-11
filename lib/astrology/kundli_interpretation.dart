@@ -1,5 +1,6 @@
 import 'astronomy_engine.dart';
 import 'vedic_kundli_engine.dart';
+import 'graha_drishti.dart';
 
 class HouseInsight {
   const HouseInsight({
@@ -29,6 +30,28 @@ class TraditionalIndicator {
   final String? caution;
 }
 
+class HouseLordInsight {
+  const HouseLordInsight({
+    required this.house,
+    required this.rashi,
+    required this.lord,
+    required this.placedHouse,
+    required this.placedHouseTheme,
+    required this.dignity,
+    required this.isRetrograde,
+    required this.aspectedBy,
+  });
+
+  final int house;
+  final String rashi;
+  final String lord;
+  final int placedHouse;
+  final String placedHouseTheme;
+  final String dignity;
+  final bool isRetrograde;
+  final List<String> aspectedBy;
+}
+
 class KundliInterpretation {
   static const houseThemes = <String>[
     'स्वभाव, शरीर और जीवन-दृष्टि',
@@ -44,6 +67,40 @@ class KundliInterpretation {
     'लाभ, नेटवर्क, मित्र और दीर्घकालीन लक्ष्य',
     'व्यय, विश्राम, एकांत और आध्यात्मिक साधना',
   ];
+
+  static const _rashiLords = <String>[
+    'मंगल', 'शुक्र', 'बुध', 'चंद्र', 'सूर्य', 'बुध',
+    'शुक्र', 'मंगल', 'गुरु', 'शनि', 'शनि', 'गुरु',
+  ];
+
+  static List<HouseLordInsight> houseLords(VedicKundli chart) {
+    final strengths = {
+      for (final item in GrahaDrishti.strengths(chart)) item.graha: item,
+    };
+    final aspects = GrahaDrishti.aspects(chart);
+    return List.generate(12, (index) {
+      final sign = (chart.lagnaRashiIndex + index) % 12;
+      final lord = _rashiLords[sign];
+      final planet = chart.grahas.firstWhere((g) => g.name == lord);
+      final placedHouse =
+          (planet.rashiIndex - chart.lagnaRashiIndex + 12) % 12 + 1;
+      final received = aspects
+          .where((aspect) => aspect.toHouse == index + 1)
+          .map((aspect) => aspect.fromGraha)
+          .toSet()
+          .toList();
+      return HouseLordInsight(
+        house: index + 1,
+        rashi: VedicLunarPosition.rashis[sign],
+        lord: lord,
+        placedHouse: placedHouse,
+        placedHouseTheme: houseThemes[placedHouse - 1],
+        dignity: strengths[lord]?.dignity ?? 'जाँच उपलब्ध नहीं',
+        isRetrograde: planet.isRetrograde,
+        aspectedBy: received,
+      );
+    });
+  }
 
   static List<HouseInsight> houses(VedicKundli chart) {
     return List.generate(12, (index) {
