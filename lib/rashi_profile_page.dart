@@ -61,7 +61,24 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     return n;
   }
   int? _offsetMinutes() {
-    final match = RegExp(r'^([+-])(\\d{2}):(\\d{2})
+    final match = RegExp(r'^([+-])(\\d{2}):(\\d{2})$').firstMatch(utcOffsetController.text.trim());
+    if (match == null) return null;
+    final hours = int.parse(match.group(2)!);
+    final minutes = int.parse(match.group(3)!);
+    if (hours > 14 || minutes > 59 || (hours == 14 && minutes != 0)) return null;
+    final value = hours * 60 + minutes;
+    return match.group(1) == '-' ? -value : value;
+  }
+  VedicLunarPosition? _vedicMoonPosition() {
+    if (dob == null || birthTime == null) return null;
+    final offset = _offsetMinutes();
+    if (offset == null) return null;
+    final localAsUtc = DateTime.utc(dob!.year, dob!.month, dob!.day, birthTime!.hour, birthTime!.minute);
+    final birthUtc = localAsUtc.subtract(Duration(minutes: offset));
+    final snapshot = const AstronomyEngine().positionsAtUtc(birthUtc);
+    return VedicLunarPosition.fromTropicalMoon(snapshot.moonTropicalLongitude, birthUtc);
+  }
+  int _mulank(DateTime d)=>_reduce(d.day.toString());
   int _bhagyank(DateTime d)=>_reduce(d.day.toString()+d.month.toString()+d.year.toString());
   int _sunSign(DateTime d){
     final m=d.month,day=d.day;
