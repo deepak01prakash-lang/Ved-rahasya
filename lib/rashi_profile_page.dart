@@ -98,6 +98,31 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     return '$sign$hours:$minutes';
   }
 
+  void _applyBirthTimezoneOffset() {
+    if (birthTimezoneId == null || dob == null || birthTime == null) return;
+    tzdata.initializeTimeZones();
+    final zone = tz.getLocation(birthTimezoneId!);
+    final wallClockAsUtc = DateTime.utc(
+      dob!.year, dob!.month, dob!.day, birthTime!.hour, birthTime!.minute,
+    );
+    var utcGuess = wallClockAsUtc;
+    for (var i = 0; i < 4; i++) {
+      final zoneOffset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
+      utcGuess = wallClockAsUtc.subtract(Duration(milliseconds: zoneOffset));
+    }
+    final resolvedLocal = tz.TZDateTime.from(utcGuess, zone);
+    final matchesWallClock = resolvedLocal.year == dob!.year &&
+        resolvedLocal.month == dob!.month &&
+        resolvedLocal.day == dob!.day &&
+        resolvedLocal.hour == birthTime!.hour &&
+        resolvedLocal.minute == birthTime!.minute;
+    if (!matchesWallClock) {
+      throw const FormatException('इस तारीख/समय पर उस स्थान में clock change हुआ था। कृपया जन्म समय और timezone की पुष्टि करें।');
+    }
+    final offset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
+    utcOffsetController.text = _formatUtcOffset(offset);
+  }
+
   Future<void> _lookupBirthPlace() async {
     final query = placeController.text.trim();
     if (query.isEmpty) {
@@ -123,29 +148,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
       latitudeController.text = match.latitude.toStringAsFixed(6);
       longitudeController.text = match.longitude.toStringAsFixed(6);
 
-      // Resolve the offset at the birth instant, not today's offset. Iteration
-      // handles DST transitions and historical rule changes in the IANA database.
-      if (dob != null && birthTime != null) {
-        final wallClockAsUtc = DateTime.utc(
-          dob!.year, dob!.month, dob!.day, birthTime!.hour, birthTime!.minute,
-        );
-        var utcGuess = wallClockAsUtc;
-        for (var i = 0; i < 4; i++) {
-          final zoneOffset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
-          utcGuess = wallClockAsUtc.subtract(Duration(milliseconds: zoneOffset));
-        }
-        final resolvedLocal = tz.TZDateTime.from(utcGuess, zone);
-        final matchesWallClock = resolvedLocal.year == dob!.year &&
-            resolvedLocal.month == dob!.month &&
-            resolvedLocal.day == dob!.day &&
-            resolvedLocal.hour == birthTime!.hour &&
-            resolvedLocal.minute == birthTime!.minute;
-        if (!matchesWallClock) {
-          throw const FormatException('इस तारीख/समय पर उस स्थान में clock change हुआ था। कृपया जन्म समय और timezone की पुष्टि करें।');
-        }
-        final offset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
-        utcOffsetController.text = _formatUtcOffset(offset);
-      }
+      _applyBirthTimezoneOffset();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('स्थान मिला: ${zone.name} • Coordinates और timezone भर दिए गए।')),
@@ -203,11 +206,11 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
   }
   Future<void> _pickDate() async {
     final v=await showDatePicker(context:context,initialDate:dob??DateTime(1995,1,1),firstDate:DateTime(1900),lastDate:DateTime.now(),helpText:'जन्मतिथि चुनें');
-    if(v!=null)setState(()=>dob=v);
+    if(v!=null){setState(()=>dob=v);try{_applyBirthTimezoneOffset();}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('FormatException: ',''))));}}
   }
   Future<void> _pickTime() async {
     final v=await showTimePicker(context:context,initialTime:birthTime??const TimeOfDay(hour:6,minute:0));
-    if(v!=null)setState(()=>birthTime=v);
+    if(v!=null){setState(()=>birthTime=v);try{_applyBirthTimezoneOffset();}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('FormatException: ',''))));}}
   }
   Widget _card(String title,List<Widget> children)=>Card(margin:const EdgeInsets.only(bottom:12),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:17,fontWeight:FontWeight.bold,color:Color(0xFF754414))),const SizedBox(height:10),...children])));
   Widget _line(String label,String value)=>Padding(padding:const EdgeInsets.only(bottom:9),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(label,style:TextStyle(fontSize:12,color:Colors.brown.shade500)),const SizedBox(height:3),SelectableText(value,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w600))]));
