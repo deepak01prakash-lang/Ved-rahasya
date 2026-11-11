@@ -23,6 +23,34 @@ void main() {
       ]));
     });
 
+    test('J2000 tropical longitudes agree with an independent ephemeris reference', () {
+      final instant = DateTime.utc(2000, 1, 1, 12);
+      final chart = engine.calculate(
+        birthUtc: instant,
+        latitude: 0,
+        longitudeEast: 0,
+      );
+      const ayanamshaAtJ2000 = 23.8570922;
+      final references = <String, double>{
+        'सूर्य': 280.3686,
+        'चंद्र': 223.3239,
+        'मंगल': 327.9639,
+        'बुध': 271.8889,
+        'गुरु': 25.2542,
+        'शुक्र': 241.5653,
+        'शनि': 40.3961,
+      };
+      for (final entry in references.entries) {
+        final actual = (chart.grahas
+                    .firstWhere((graha) => graha.name == entry.key)
+                    .longitude +
+                ayanamshaAtJ2000) %
+            360;
+        final delta = ((actual - entry.value + 540) % 360) - 180;
+        expect(delta.abs(), lessThan(0.5), reason: entry.key);
+      }
+    });
+
     test('calculates navamsha signs within twelve rashis', () {
       final chart = engine.calculate(
         birthUtc: DateTime.utc(2000, 1, 1, 12),
