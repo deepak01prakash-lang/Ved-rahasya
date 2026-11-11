@@ -1,36 +1,38 @@
-# Ved Rahasya astrology engine — implementation notes
+# Ved Rahasya astrology engine — implementation and validation status
 
 ## Calculation policy
+- Birth date, wall-clock time, coordinates, and historical time-zone data are used where supplied.
+- Sidereal chart output uses the Lahiri ayanamsha implementation in this repository.
+- Moon sign, ascendant, nakshatra/pada, divisional charts, graha drishti, strength indicators and Vimshottari periods are calculated in-app.
+- Gemstone, deity and mantra associations are presented as traditional references, not guaranteed remedies or scientific predictions.
+- Panchanga is sunrise-oriented and should be cross-checked with a trusted local Panchanga for ritual/muhurta decisions.
 
-- Primary target: Drik-style astronomical calculations, Lahiri/Chitrapaksha sidereal zodiac, local birth time converted to UTC using the birth location's historical time zone.
-- Never infer a Vedic Moon sign, Ascendant, Nakshatra, or Panchanga from date-only Western Sun-sign ranges.
-- Never show a gemstone as a guaranteed remedy. Explain that gemstone and devotional associations are traditional beliefs.
+## Dependencies and licensing
+The current astronomical foundation uses the MIT-licensed Dart package `astronomia` (Meeus-based algorithms): https://pub.dev/packages/astronomia.
+Swiss Ephemeris was not bundled. Its GPL/commercial dual licensing would require a deliberate distribution/licensing decision before adoption.
 
-## Dependency and licensing
+## Implemented
+- Julian Day and astronomical position helpers.
+- Lahiri sidereal longitude conversion.
+- Nine graha positions, Ascendant and whole-sign houses.
+- Navamsha and divisional chart calculations (D2, D3, D4, D7, D9, D10, D12, D16, D20, D24, D27, D30, D40, D45, D60).
+- Vimshottari Mahadasha, Antardasha and Pratyantardasha timeline generation.
+- Graha drishti and preliminary strength/yoga indicators.
+- Birth-place geocoding and IANA timezone lookup in the profile screen, with manual coordinate/UTC-offset fields.
+- Sunrise Panchanga fields: tithi, vara, nakshatra, yoga, karana, sunrise and sunset.
+- Regression/unit tests including a J2000 planetary-position reference comparison and selected divisional/dasha rules.
 
-The first calculation foundation uses the MIT-licensed Dart package `astronomia` (Meeus-based algorithms). It provides astronomical primitives without embedding the Swiss Ephemeris licensing obligations in the application. Package details: https://pub.dev/packages/astronomia
+## Validation status and limitations
+- CI runs `dart format lib test`, `flutter test`, and a release APK build. The most recent successful run is visible in GitHub Actions.
+- The J2000 test is a regression check at one epoch; it is not a comprehensive ephemeris certification.
+- All historical dates, extreme latitudes, sign-boundary cases, timezone transitions and every divisional-chart convention have not been exhaustively cross-validated against two independent professional ephemerides.
+- Sunrise/sunset use a compact solar-event approximation; altitude, local horizon, refraction and regional conventions can cause differences.
+- Panchanga values are calculated near sunrise. Tithi/nakshatra transitions during the day and location-specific muhurta windows are not yet shown as full transition tables.
+- Yoga detection is preliminary and should not be treated as a definitive classical yoga judgement without checking all traditional conditions, aspects, combustion, dignity and chart context.
+- The app does not promise fate, health, financial or relationship outcomes. Interpretive text is educational and tradition-based.
 
-A Swiss Ephemeris-based package was evaluated but not adopted because its underlying Swiss Ephemeris engine is GPL/commercial dual-licensed. Before adopting it in a distributable app, the project owner must deliberately choose GPL-compatible distribution or obtain the applicable commercial license.
-
-## Implemented foundation
-
-- UTC Julian Day conversion.
-- Geocentric apparent tropical Sun and Moon ecliptic longitudes.
-- Lunar elongation and illuminated fraction.
-- A smoke test around the J2000 epoch.
-
-These outputs are internal astronomical primitives only. They are **not yet** Vedic sidereal results.
-
-## Next implementation gates
-
-1. Validate Lahiri ayanamsa implementation against published reference dates.
-2. Resolve city/place to latitude, longitude, and historical IANA time zone; retain manual correction.
-3. Convert birth wall-clock time to UTC without assuming the phone's current time zone.
-4. Add sidereal planetary positions, Moon sign, Nakshatra/pada, Ascendant and houses.
-5. Add Panchanga: Tithi, Vara, Nakshatra, Yoga, Karana, sunrise/sunset, local day boundary and muhurta.
-6. Cross-check a diverse golden test set against at least two reputable Panchanga/ephemeris references before exposing results.
-7. Add transits, Dashas, compatibility and daily horoscope content only after their calculation outputs are validated.
-
-## Not yet implemented
-
-No production Vedic chart, daily Panchanga, transit forecast, horoscope prediction, geocoding, or birth-place time-zone resolution is claimed by this foundation commit.
+## Further verification gates
+1. Compare a golden set of dates and locations (including DST/timezone-history boundaries) against at least two reputable independent ephemerides.
+2. Verify each divisional-chart convention and Vimshottari boundary handling against documented classical references.
+3. Validate sunrise Panchanga transitions against location-specific Panchanga references across multiple dates.
+4. Expand boundary/property-based tests before describing the engine as professionally certified.
