@@ -21,12 +21,14 @@ Ved Rahasya is a Flutter application for Sanatana Dharma study, devotional readi
 
 The CI workflow generates the Android platform folder, formats Dart sources, runs tests, builds a release APK and uploads it as a GitHub Actions artifact.
 
-## Build and signing
-GitHub Actions currently uses a persistent Android **debug** signing key for sideloaded update testing. This is not the private Play Store upload key. Do not publish this CI APK to Google Play. A separate private upload keystore and protected signing secrets must be configured before store release.
+## Build, Firebase and signing
+GitHub Actions builds a debug-signed APK for device testing until private upload-signing secrets are configured. Once configured, it builds a Play-upload-signed Android App Bundle (AAB) and APK. The upload keystore and passwords are never stored in the repository; see [production release setup](docs/PRODUCTION_RELEASE_SETUP.md).
+
+Firebase Email/Password authentication is implemented as an optional account screen. Until the Android app is registered and the two Firebase build values are supplied, the app remains usable in local/offline mode and the account screen explains the pending setup. No password is stored by the app itself; Firebase Authentication handles credentials.
 
 ## Important production gaps
-- Firebase project ID/number has been created, but Firebase app registration/configuration, Authentication providers, security rules and cloud sync are not configured in this repository. There is no production login/account system yet.
-- No Google Play Console organization account, verified business identity, store listing or production upload key is configured here.
+- Firebase project ID/number has been created. Email/Password authentication UI and Firebase SDK integration are in place, but the Android app registration and Email/Password provider must still be enabled in Firebase Console. User data is still stored locally; cloud sync/security rules are not implemented.
+- Google Play Console account/organization verification, store listing, and the private upload keystore/secrets are external release prerequisites.
 - Astrology regression tests are useful safeguards, not professional ephemeris certification. Historical dates, boundary conditions and all traditional chart rules still need broader independent validation.
 - Panchanga sunrise/sunset is an approximation; local Panchanga confirmation is advised for ritual timing.
 - Devotional text sources and variants should continue to be checked before public release.

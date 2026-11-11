@@ -10,9 +10,12 @@ import 'rashi_profile_page.dart';
 import 'bhakti_library_page.dart';
 import 'panchang_page.dart';
 import 'meditation_page.dart';
+import 'account_page.dart';
+import 'firebase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseConfig.initialize();
   runApp(const VedRahasyaApp());
 }
 
@@ -317,6 +320,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'यूज़र अकाउंट / Login',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AccountPage()),
+            ),
+          ),
           IconButton(
             tooltip: 'धर्म और सनातन खोजें',
             icon: const Icon(Icons.search),

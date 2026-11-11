@@ -67,19 +67,84 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      # Keep one signing key across CI builds so Android can install updates.
-      # This debug key is for sideloaded test APKs only; Play Store needs a private upload key.
+      # Debug signing remains the safe fallback until the private Play upload key is configured.
       - name: Restore stable Android debug signing key
         uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
           key: ved-rahasya-android-debug-signing-v1
 
-      - name: Build Android APK
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+      - name: Configure private Android upload signing
+        id: release_signing
+        env:
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$ANDROID_UPLOAD_KEYSTORE_BASE64" && -n "$ANDROID_UPLOAD_KEYSTORE_PASSWORD" && -n "$ANDROID_UPLOAD_KEY_ALIAS" && -n "$ANDROID_UPLOAD_KEY_PASSWORD" ]]; then
+            KEYSTORE_PATH="$RUNNER_TEMP/ved-rahasya-upload.jks"
+            printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+            cat > android/key.properties <<EOF
+          storePassword=$ANDROID_UPLOAD_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_UPLOAD_KEY_PASSWORD
+          keyAlias=$ANDROID_UPLOAD_KEY_ALIAS
+          storeFile=$KEYSTORE_PATH
+          EOF
+            python3 - <<'PY'
+          from pathlib import Path
+          path = Path('android/app/build.gradle.kts')
+          source = path.read_text()
+          marker = '    buildTypes {'
+          debug_signing = 'signingConfig = signingConfigs.getByName("debug")'
+          if marker not in source or debug_signing not in source:
+              raise SystemExit('Unexpected Flutter Gradle template; refusing to guess release-signing edits.')
+          imports = 'import java.io.FileInputStream\\nimport java.util.Properties\\n\\n'
+          source = imports + source
+          signing = '''    signingConfigs {
+                  create("release") {
+                      keyAlias = "${System.getenv("ANDROID_UPLOAD_KEY_ALIAS")}"
+                      keyPassword = "${System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")}"
+                      storeFile = file("${System.getenv("RUNNER_TEMP")}/ved-rahasya-upload.jks")
+                      storePassword = "${System.getenv("ANDROID_UPLOAD_KEYSTORE_PASSWORD")}"
+                  }
+              }
 
-      - name: Upload APK
+          '''
+          source = source.replace(marker, signing + marker, 1)
+          source = source.replace(debug_signing, 'signingConfig = signingConfigs.getByName("release")', 1)
+          path.write_text(source)
+          PY
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+            echo 'Private upload signing configured; signed AAB and APK will be built.'
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'Upload-key secrets are not configured; creating the debug-signed test APK only.'
+          fi
+
+      - name: Build signed Android App Bundle and APK
+        if: steps.release_signing.outputs.enabled == 'true'
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+        run: |
+          flutter build appbundle --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
+          flutter build apk --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
+
+      - name: Build Android test APK (debug signing fallback)
+        if: steps.release_signing.outputs.enabled != 'true'
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+        run: flutter build apk --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
+
+      - name: Upload Android build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Ved-Rahasya-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: Ved-Rahasya-Android
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: warn
