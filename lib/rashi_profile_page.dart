@@ -108,7 +108,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     var utcGuess = wallClockAsUtc;
     for (var i = 0; i < 4; i++) {
       final zoneOffset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
-      utcGuess = wallClockAsUtc.subtract(Duration(milliseconds: zoneOffset));
+      utcGuess = wallClockAsUtc.subtract(Duration(milliseconds: zoneOffset.inMilliseconds));
     }
     final resolvedLocal = tz.TZDateTime.from(utcGuess, zone);
     final matchesWallClock = resolvedLocal.year == dob!.year &&
@@ -120,7 +120,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
       throw const FormatException('इस तारीख/समय पर उस स्थान में clock change हुआ था। कृपया जन्म समय और timezone की पुष्टि करें।');
     }
     final offset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
-    utcOffsetController.text = _formatUtcOffset(offset);
+    utcOffsetController.text = _formatUtcOffset(offset.inMilliseconds);
   }
 
   Future<void> _lookupBirthPlace() async {
