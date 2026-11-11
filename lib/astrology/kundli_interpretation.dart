@@ -169,6 +169,29 @@ class KundliInterpretation {
     final mars = byName('मंगल');
     final mercury = byName('बुध');
     final jupiter = byName('गुरु');
+    final strengthByName = {
+      for (final item in GrahaDrishti.strengths(chart)) item.graha: item,
+    };
+
+    TraditionalIndicator mahapurusha(
+      String planetName,
+      String yogaName,
+      String quality,
+    ) {
+      final planet = byName(planetName);
+      final house =
+          (planet.rashiIndex - chart.lagnaRashiIndex + 12) % 12 + 1;
+      final strength = strengthByName[planetName]!;
+      final present = [1, 4, 7, 10].contains(house) &&
+          (strength.isOwnSign || strength.isExalted) &&
+          !strength.isCombust;
+      return TraditionalIndicator(
+        name: yogaName,
+        description: '$planetName लग्न से केंद्र भाव में उच्च या स्वराशि में हो और अस्त न हो—यह $quality का प्राथमिक पारंपरिक मानदंड है। अन्य बल/दोषों की जाँच भी आवश्यक है।',
+        isPresent: present,
+        caution: 'यह प्रारंभिक राशि-आधारित जाँच है; अंश, दृष्टि, युति और परंपरा-विशेष के नियम अलग से जाँचें।',
+      );
+    }
 
     int houseDistance(int fromSign, int toSign) => (toSign - fromSign + 12) % 12 + 1;
     final jupiterFromMoon = houseDistance(moon.rashiIndex, jupiter.rashiIndex);
@@ -180,7 +203,8 @@ class KundliInterpretation {
       TraditionalIndicator(
         name: 'बुध-आदित्य योग',
         description: 'सूर्य और बुध एक ही राशि में हैं। पारंपरिक व्याख्या में बुद्धि, सीखने और अभिव्यक्ति से जोड़ा जाता है; वास्तविक फल भाव, अंश और अस्त स्थिति पर निर्भर करता है।',
-        isPresent: sun.rashiIndex == mercury.rashiIndex,
+        isPresent: sun.rashiIndex == mercury.rashiIndex &&
+            GrahaDrishti.angularDistance(sun.longitude, mercury.longitude) <= 15,
       ),
       TraditionalIndicator(
         name: 'गजकेसरी योग',
@@ -190,12 +214,14 @@ class KundliInterpretation {
       TraditionalIndicator(
         name: 'चंद्र-मंगल योग',
         description: 'चंद्रमा और मंगल एक ही राशि में हैं। कुछ परंपराएँ इसे ऊर्जा, उद्यम और वित्तीय सक्रियता से जोड़ती हैं; भाव और ग्रहबल के अनुसार व्याख्या बदलती है।',
-        isPresent: moon.rashiIndex == mars.rashiIndex,
+        isPresent: moon.rashiIndex == mars.rashiIndex &&
+            GrahaDrishti.angularDistance(moon.longitude, mars.longitude) <= 12,
       ),
       TraditionalIndicator(
         name: 'गुरु-मंगल योग',
         description: 'गुरु और मंगल एक ही राशि में हैं। पारंपरिक अर्थ में ज्ञान को कर्म में बदलने की क्षमता का संकेत माना जाता है।',
-        isPresent: jupiter.rashiIndex == mars.rashiIndex,
+        isPresent: jupiter.rashiIndex == mars.rashiIndex &&
+            GrahaDrishti.angularDistance(jupiter.longitude, mars.longitude) <= 15,
       ),
       TraditionalIndicator(
         name: 'मांगलिक संकेत',
@@ -203,6 +229,11 @@ class KundliInterpretation {
         isPresent: manglikHouses.contains(marsFromLagna) || manglikHouses.contains(marsFromMoon),
         caution: 'मांगलिक नियम अलग-अलग ज्योतिष परंपराओं में बदलते हैं।',
       ),
+      mahapurusha('मंगल', 'रुचक महापुरुष योग', 'साहस और नेतृत्व का रुचक योग'),
+      mahapurusha('बुध', 'भद्र महापुरुष योग', 'बुद्धि और वाणी का भद्र योग'),
+      mahapurusha('गुरु', 'हंस महापुरुष योग', 'ज्ञान और धर्म का हंस योग'),
+      mahapurusha('शुक्र', 'मालव्य महापुरुष योग', 'कला और सुख का मालव्य योग'),
+      mahapurusha('शनि', 'शश महापुरुष योग', 'अनुशासन और संगठन का शश योग'),
     ];
   }
 }
