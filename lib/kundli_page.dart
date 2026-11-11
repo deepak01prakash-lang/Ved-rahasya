@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'astrology/astronomy_engine.dart';
 import 'astrology/vedic_kundli_engine.dart';
 
 class KundliPage extends StatefulWidget {
