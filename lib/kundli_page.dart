@@ -153,6 +153,16 @@ class _KundliPageState extends State<KundliPage> {
     final dasha = c.vimshottari.mahadashas;
     final now = DateTime.now().toUtc();
     final active = dasha.where((p) => !now.isBefore(p.start) && now.isBefore(p.end)).toList();
+    final activeAntar = active.isEmpty
+        ? <DashaPeriod>[]
+        : c.vimshottari.antardashas(active.first)
+            .where((p) => !now.isBefore(p.start) && now.isBefore(p.end))
+            .toList();
+    final activePratyantar = activeAntar.isEmpty
+        ? <DashaPeriod>[]
+        : c.vimshottari.pratyantardashas(activeAntar.first)
+            .where((p) => !now.isBefore(p.start) && now.isBefore(p.end))
+            .toList();
     const vargaNames = <int, String>{
       2: 'D2 • होरा', 3: 'D3 • द्रेष्काण', 4: 'D4 • चतुर्थांश',
       7: 'D7 • सप्तमांश', 10: 'D10 • दशमांश', 12: 'D12 • द्वादशांश',
@@ -219,10 +229,43 @@ class _KundliPageState extends State<KundliPage> {
           if (active.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Card(color: const Color(0xFFFFE9C5), child: ListTile(
-                title: Text('वर्तमान महादशा: ${active.first.lord}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('${_date(active.first.start)} – ${_date(active.first.end)}'),
-              )),
+              child: Card(
+                color: const Color(0xFFFFE9C5),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('आज की चल रही दशाएँ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    for (final period in [
+                      active.first,
+                      if (activeAntar.isNotEmpty) activeAntar.first,
+                      if (activePratyantar.isNotEmpty) activePratyantar.first,
+                    ])
+                      Builder(builder: (context) {
+                        final insight = KundliInterpretation.dashaLord(c, period.lord);
+                        final level = period == active.first
+                            ? 'महादशा'
+                            : activeAntar.isNotEmpty && period == activeAntar.first
+                                ? 'अंतर्दशा'
+                                : 'प्रत्यंतरदशा';
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('$level: ${period.lord}  •  ${_date(period.start)} – ${_date(period.end)}',
+                              style: const TextStyle(fontWeight: FontWeight.w700)),
+                            Text('${insight.sign}, ${insight.house}वें भाव में • ${insight.dignity}${insight.isRetrograde ? ' • वक्री' : ''}'),
+                            Text('इस ग्रह के स्वामित्व वाले भाव: ${insight.ruledHouses.isEmpty ? 'उपलब्ध नहीं' : insight.ruledHouses.join(', ')}'),
+                            Text('भाव का विषय: ${insight.houseTheme}'),
+                          ]),
+                        );
+                      }),
+                    const Text(
+                      'यह दशा-स्वामी की जन्म-कुंडली में स्थिति का पारंपरिक संदर्भ है। शुभ-अशुभ फल का निष्कर्ष ग्रह-दृष्टि, योग, भाव-स्वामित्व, गोचर और दशा-संधि सहित पूरी जाँच के बिना नहीं निकालना चाहिए।',
+                      style: TextStyle(fontSize: 11, height: 1.4),
+                    ),
+                  ]),
+                ),
+              ),
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
