@@ -104,7 +104,9 @@ class VedicKundli {
         start = sign.isEven ? 4 : 3;
         break;
       case 27:
-        start = [0, 3, 6][sign % 3];
+        // Nakshatramsa: fire, earth, air and water signs begin from
+        // Aries, Cancer, Libra and Capricorn respectively.
+        start = [0, 3, 6, 9][sign % 4];
         break;
       case 40:
         start = sign.isEven ? 0 : 6;
