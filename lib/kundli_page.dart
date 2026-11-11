@@ -212,10 +212,17 @@ class _KundliPageState extends State<KundliPage> {
                   subtitle: Text('${_date(period.start)} – ${_date(period.end)}'),
                   children: [
                     for (final sub in c.vimshottari.antardashas(period))
-                      ListTile(
-                        dense: true,
+                      ExpansionTile(
                         title: Text('${period.lord} / ${sub.lord}'),
                         subtitle: Text('${_date(sub.start)} – ${_date(sub.end)}'),
+                        children: [
+                          for (final micro in c.vimshottari.pratyantardashas(sub))
+                            ListTile(
+                              dense: true,
+                              title: Text('${period.lord} / ${sub.lord} / ${micro.lord}'),
+                              subtitle: Text('${_date(micro.start)} – ${_date(micro.end)}'),
+                            ),
+                        ],
                       ),
                   ],
                 ),
