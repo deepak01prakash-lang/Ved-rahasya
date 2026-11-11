@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'rashi_profile_page.dart';
 import 'bhakti_library_page.dart';
+import 'panchang_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -519,8 +520,10 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'दैनिक पंचांग',
           subtitle: 'तिथि • वार • नक्षत्र • योग • करण • मुहूर्त',
           icon: Icons.calendar_month_rounded, tint: const Color(0xFF287A68),
-          tag: 'आगे जोड़ा जाएगा',
-          onTap: () => _showComingSoon('दैनिक पंचांग'),
+          tag: 'सूर्योदय आधारित',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PanchangPage()),
+          ),
         ),
         heading('सनातन ग्रंथ', 'हर ग्रंथ का अलग विभाग और क्रमबद्ध अध्ययन'),
         sectionCard(
