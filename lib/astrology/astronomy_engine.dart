@@ -64,3 +64,91 @@ class AstronomyEngine {
     );
   }
 }
+
+
+/// Lahiri/Chitrapaksha mean ayanamsha reference implementation.
+///
+/// Uses the 1956 Calendar Reform Committee epoch and a polynomial
+/// precession approximation. It is a mean ayanamsha (nutation is not added),
+/// so boundary cases must be cross-checked against a validated ephemeris
+/// before being used for production kundli or Panchanga claims.
+class LahiriAyanamsha {
+  const LahiriAyanamsha._();
+
+  static const double _epochJd = 2435553.5; // 1956-03-21 00:00 TT
+  static const double _epochArcSeconds = 23 * 3600 + 15 * 60 + 0.658;
+
+  static double meanDegreesAtUtc(DateTime utc) {
+    final instant = utc.toUtc();
+    final dayFraction = (instant.hour +
+            instant.minute / 60 +
+            instant.second / 3600 +
+            instant.millisecond / 3600000 +
+            instant.microsecond / 3600000000) /
+        24;
+    final jd = calendarGregorianToJD(
+      instant.year,
+      instant.month,
+      instant.day + dayFraction,
+    );
+    final centuries = (jd - _epochJd) / 36525.0;
+    final arcSeconds = _epochArcSeconds +
+        5028.796195 * centuries +
+        1.1054348 * centuries * centuries;
+    return arcSeconds / 3600.0;
+  }
+
+  static double siderealLongitude(double tropicalLongitude, DateTime utc) {
+    final value = tropicalLongitude - meanDegreesAtUtc(utc);
+    return (value % 360 + 360) % 360;
+  }
+}
+
+class VedicLunarPosition {
+  const VedicLunarPosition({
+    required this.siderealLongitude,
+    required this.rashiIndex,
+    required this.nakshatraIndex,
+    required this.nakshatraPada,
+  });
+
+  final double siderealLongitude;
+  final int rashiIndex;
+  final int nakshatraIndex;
+  final int nakshatraPada;
+
+  static const rashis = [
+    'मेष', 'वृषभ', 'मिथुन', 'कर्क', 'सिंह', 'कन्या',
+    'तुला', 'वृश्चिक', 'धनु', 'मकर', 'कुंभ', 'मीन',
+  ];
+
+  static const nakshatras = [
+    'अश्विनी', 'भरणी', 'कृत्तिका', 'रोहिणी', 'मृगशिरा', 'आर्द्रा',
+    'पुनर्वसु', 'पुष्य', 'आश्लेषा', 'मघा', 'पूर्वा फाल्गुनी',
+    'उत्तरा फाल्गुनी', 'हस्त', 'चित्रा', 'स्वाती', 'विशाखा',
+    'अनुराधा', 'ज्येष्ठा', 'मूल', 'पूर्वाषाढ़ा', 'उत्तराषाढ़ा',
+    'श्रवण', 'धनिष्ठा', 'शतभिषा', 'पूर्वाभाद्रपद', 'उत्तराभाद्रपद',
+    'रेवती',
+  ];
+
+  factory VedicLunarPosition.fromTropicalMoon(
+    double tropicalLongitude,
+    DateTime utc,
+  ) {
+    final longitude = LahiriAyanamsha.siderealLongitude(
+      tropicalLongitude,
+      utc,
+    );
+    const nakshatraWidth = 360.0 / 27.0;
+    const padaWidth = nakshatraWidth / 4.0;
+    return VedicLunarPosition(
+      siderealLongitude: longitude,
+      rashiIndex: (longitude / 30).floor(),
+      nakshatraIndex: (longitude / nakshatraWidth).floor(),
+      nakshatraPada: ((longitude % nakshatraWidth) / padaWidth).floor() + 1,
+    );
+  }
+
+  String get rashi => rashis[rashiIndex];
+  String get nakshatra => nakshatras[nakshatraIndex];
+}
