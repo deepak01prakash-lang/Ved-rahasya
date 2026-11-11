@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ved_rahasya/astrology/vedic_kundli_engine.dart';
+import 'package:ved_rahasya/astrology/graha_drishti.dart';
 
 void main() {
   group('VedicKundliEngine', () {
@@ -44,6 +45,35 @@ void main() {
           expect(chart.divisionalSign(longitude, division), inInclusiveRange(0, 11));
         }
       }
+    });
+
+    test('D27 starts from the correct elemental signs', () {
+      final chart = engine.calculate(
+        birthUtc: DateTime.utc(2000, 1, 1, 12),
+        latitude: 0,
+        longitudeEast: 0,
+      );
+      expect(chart.divisionalSign(0.1, 27), 0); // Aries
+      expect(chart.divisionalSign(30.1, 27), 3); // Cancer
+      expect(chart.divisionalSign(60.1, 27), 6); // Libra
+      expect(chart.divisionalSign(90.1, 27), 9); // Capricorn
+    });
+
+    test('graha dignity and aspect calculations return consistent chart data', () {
+      final chart = engine.calculate(
+        birthUtc: DateTime.utc(1993, 10, 24, 20, 55),
+        latitude: 24.03,
+        longitudeEast: 84.07,
+      );
+      final strengths = GrahaDrishti.strengths(chart);
+      expect(strengths, hasLength(9));
+      expect(strengths.map((s) => s.graha).toSet(), contains('सूर्य'));
+      final aspects = GrahaDrishti.aspects(chart);
+      expect(aspects.where((a) => a.fromGraha == 'मंगल'), hasLength(3));
+      expect(aspects.where((a) => a.fromGraha == 'गुरु'), hasLength(3));
+      expect(aspects.where((a) => a.fromGraha == 'शनि'), hasLength(3));
+      expect(aspects.where((a) => a.fromGraha == 'सूर्य'), hasLength(1));
+      expect(aspects.every((a) => a.toHouse >= 1 && a.toHouse <= 12), isTrue);
     });
 
     test('Vimshottari balance and antardasha periods are ordered', () {
