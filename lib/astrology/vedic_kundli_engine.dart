@@ -80,7 +80,8 @@ class VedicKundli {
     int start;
     switch (division) {
       case 3:
-        start = sign;
+        // Drekkana: odd signs begin from themselves; even signs from the 9th.
+        start = sign.isEven ? sign : (sign + 8) % 12;
         break;
       case 4:
         start = sign;
@@ -335,7 +336,9 @@ class VimshottariTimeline {
     }
     // Continue the cycle far enough to cover a normal lifetime.
     while (periods.length < 19) {
-      final index = periods.length % 9;
+      // After the birth-balance segment and the remaining eight lords,
+      // the sequence restarts from the original birth Mahadasha lord.
+      final index = (lordIndex + periods.length - 9) % 9;
       final end = cursor.add(Duration(
         microseconds: (years[index] * yearDays * Duration.microsecondsPerDay).round(),
       ));
