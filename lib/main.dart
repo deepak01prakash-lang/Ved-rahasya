@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'rashi_profile_page.dart';
 import 'bhakti_library_page.dart';
 import 'panchang_page.dart';
+import 'meditation_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -567,7 +568,9 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'ध्यान साधना',
           subtitle: 'श्वास अभ्यास • एकाग्रता • शांति',
           icon: Icons.self_improvement, tint: const Color(0xFF647D9C),
-          onTap: () => _showComingSoon('ध्यान साधना'),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const MeditationPage()),
+          ),
         ),
         heading('आज की साधना', 'अपनी दैनिक प्रगति जारी रखें'),
         Card(
@@ -621,17 +624,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  void _showComingSoon(String section) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(section),
-        content: const Text('इस विभाग की सामग्री अगले अपडेट में चरणबद्ध तरीके से जोड़ी जाएगी।'),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('ठीक है'))],
-      ),
     );
   }
 
