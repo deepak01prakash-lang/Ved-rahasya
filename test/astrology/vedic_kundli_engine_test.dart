@@ -42,7 +42,7 @@ void main() {
       expect(timeline.mahadashas, isNotEmpty);
       final first = timeline.antardashas(timeline.mahadashas.first);
       expect(first, hasLength(9));
-      expect(first.first.start, first.last.end.subtract(first.last.duration));
+      expect(first.first.start, timeline.mahadashas.first.start);
       expect(first.last.end, timeline.mahadashas.first.end);
     });
   });
