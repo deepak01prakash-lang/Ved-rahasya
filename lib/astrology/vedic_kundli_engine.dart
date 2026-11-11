@@ -49,7 +49,7 @@ class VedicKundli {
   /// Navamsha (D9) sign index using the movable/fixed/dual sign rule.
   int navamshaSign(double siderealLongitude) {
     final sign = (siderealLongitude / 30).floor() % 12;
-    final part = ((siderealLongitude % 30) / (30 / 9)).floor().clamp(0, 8);
+    final part = ((siderealLongitude % 30) / (30 / 9)).floor().clamp(0, 8).toInt();
     final start = switch (sign % 3) {
       0 => sign, // movable signs begin from themselves
       1 => (sign + 8) % 12, // fixed signs begin from the 9th
