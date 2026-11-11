@@ -39,21 +39,28 @@ class _PanchangPageState extends State<PanchangPage> {
     }
     tzdata.initializeTimeZones();
     final zoneId = prefs.getString('profile_timezone_id');
-    final now = zoneId == null
-        ? DateTime.now()
-        : tz.TZDateTime.now(tz.getLocation(zoneId));
-    Duration offset = now.timeZoneOffset;
-    if (zoneId == null) {
+    late final DateTime now;
+    late final Duration offset;
+    if (zoneId != null && zoneId.isNotEmpty) {
+      final location = tz.getLocation(zoneId);
+      final zonedNow = tz.TZDateTime.now(location);
+      now = DateTime(zonedNow.year, zonedNow.month, zonedNow.day);
+      offset = zonedNow.timeZoneOffset;
+    } else {
       // Manual-coordinate profiles may not have an IANA timezone saved.
-      // Use the saved offset rather than silently assuming the phone's zone.
+      // Derive both the local date and offset from the saved UTC offset.
       final rawOffset = prefs.getString('profile_utc_offset');
       final match = rawOffset == null
           ? null
-          : RegExp(r'^([+-])(\d{2}):(\d{2})$').firstMatch(rawOffset.trim());
+          : RegExp(r'^([+-])(\\d{2}):(\\d{2})$').firstMatch(rawOffset.trim());
+      var minutes = 330;
       if (match != null) {
-        final minutes = int.parse(match.group(2)!) * 60 + int.parse(match.group(3)!);
-        offset = Duration(minutes: match.group(1) == '-' ? -minutes : minutes);
+        minutes = int.parse(match.group(2)!) * 60 + int.parse(match.group(3)!);
+        if (match.group(1) == '-') minutes = -minutes;
       }
+      offset = Duration(minutes: minutes);
+      final localNow = DateTime.now().toUtc().add(offset);
+      now = DateTime(localNow.year, localNow.month, localNow.day);
     }
     return const PanchangEngine().calculate(
       localDate: DateTime(now.year, now.month, now.day),
