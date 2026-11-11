@@ -1,3 +1,4 @@
+import 'astronomy_engine.dart';
 import 'vedic_kundli_engine.dart';
 
 class HouseInsight {
