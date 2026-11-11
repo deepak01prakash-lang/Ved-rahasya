@@ -118,7 +118,9 @@ class PanchangEngine {
     {required bool sunrise}
   ) {
     final day = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
-    final gamma = 2 * math.pi / 365 * (day - 1);
+    final daysInYear = DateTime(date.year + 1, 1, 1)
+        .difference(DateTime(date.year, 1, 1)).inDays;
+    final gamma = 2 * math.pi / daysInYear * (day - 1);
     final equationMinutes = 229.18 * (0.000075 +
         0.001868 * math.cos(gamma) -
         0.032077 * math.sin(gamma) -
