@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone_finder/timezone_finder.dart';
 import 'astrology/astronomy_engine.dart';
 import 'kundli_page.dart';
 
@@ -16,6 +20,8 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
   final latitudeController = TextEditingController();
   final longitudeController = TextEditingController();
   bool loading = true;
+  bool resolvingBirthPlace = false;
+  String? birthTimezoneId;
   static const rashis = [
     ['मेष','Aries','21 मार्च – 19 अप्रैल','मूंगा','श्री हनुमान जी / भगवान शिव','ॐ हनुमते नमः'],
     ['वृषभ','Taurus','20 अप्रैल – 20 मई','हीरा / ओपल','माँ लक्ष्मी','ॐ श्रीं महालक्ष्म्यै नमः'],
@@ -66,6 +72,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     utcOffsetController.text=p.getString('profile_utc_offset')??'+05:30';
     latitudeController.text=p.getString('profile_latitude')??'';
     longitudeController.text=p.getString('profile_longitude')??'';
+    birthTimezoneId=p.getString('profile_timezone_id');
     if(mounted)setState(()=>loading=false);
   }
   Future<void> _save() async {
@@ -76,9 +83,84 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     await p.setString('profile_utc_offset',utcOffsetController.text.trim());
     await p.setString('profile_latitude',latitudeController.text.trim());
     await p.setString('profile_longitude',longitudeController.text.trim());
+    if (birthTimezoneId != null) {
+      await p.setString('profile_timezone_id', birthTimezoneId!);
+    }
     if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('जन्म विवरण इसी फोन में सेव हो गया।')));
     if(mounted)setState((){});
   }
+  String _formatUtcOffset(int offsetMilliseconds) {
+    final totalMinutes = offsetMilliseconds ~/ 60000;
+    final sign = totalMinutes < 0 ? '-' : '+';
+    final absolute = totalMinutes.abs();
+    final hours = (absolute ~/ 60).toString().padLeft(2, '0');
+    final minutes = (absolute % 60).toString().padLeft(2, '0');
+    return '$sign$hours:$minutes';
+  }
+
+  Future<void> _lookupBirthPlace() async {
+    final query = placeController.text.trim();
+    if (query.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('पहले जन्म स्थान / शहर का नाम लिखें।')),
+      );
+      return;
+    }
+    setState(() => resolvingBirthPlace = true);
+    try {
+      final geocoding = Geocoding();
+      final matches = await geocoding.locationFromAddress(query);
+      if (matches.isEmpty) {
+        throw const FormatException('इस नाम का स्थान नहीं मिला। शहर के साथ राज्य और देश भी लिखें।');
+      }
+      final match = matches.first;
+      tzdata.initializeTimeZones();
+      final zone = findLocation(match.longitude, match.latitude);
+      if (zone == null) {
+        throw const FormatException('इस स्थान का timezone नहीं मिला। Coordinates जाँचें और UTC offset manually भरें।');
+      }
+      birthTimezoneId = zone.name;
+      latitudeController.text = match.latitude.toStringAsFixed(6);
+      longitudeController.text = match.longitude.toStringAsFixed(6);
+
+      // Resolve the offset at the birth instant, not today's offset. Iteration
+      // handles DST transitions and historical rule changes in the IANA database.
+      if (dob != null && birthTime != null) {
+        final wallClockAsUtc = DateTime.utc(
+          dob!.year, dob!.month, dob!.day, birthTime!.hour, birthTime!.minute,
+        );
+        var utcGuess = wallClockAsUtc;
+        for (var i = 0; i < 4; i++) {
+          final zoneOffset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
+          utcGuess = wallClockAsUtc.subtract(Duration(milliseconds: zoneOffset));
+        }
+        final resolvedLocal = tz.TZDateTime.from(utcGuess, zone);
+        final matchesWallClock = resolvedLocal.year == dob!.year &&
+            resolvedLocal.month == dob!.month &&
+            resolvedLocal.day == dob!.day &&
+            resolvedLocal.hour == birthTime!.hour &&
+            resolvedLocal.minute == birthTime!.minute;
+        if (!matchesWallClock) {
+          throw const FormatException('इस तारीख/समय पर उस स्थान में clock change हुआ था। कृपया जन्म समय और timezone की पुष्टि करें।');
+        }
+        final offset = zone.timeZone(utcGuess.millisecondsSinceEpoch).offset;
+        utcOffsetController.text = _formatUtcOffset(offset);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('स्थान मिला: ${zone.name} • Coordinates और timezone भर दिए गए।')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('स्थान खोज नहीं सका: ${e.toString().replaceFirst('FormatException: ', '')}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => resolvingBirthPlace = false);
+    }
+  }
+
   int _reduce(String s){
     var n=s.replaceAll(RegExp(r'[^0-9]'),'').split('').fold<int>(0,(a,b)=>a+int.parse(b));
     while(n>9){n=n.toString().split('').fold<int>(0,(a,b)=>a+int.parse(b));}
@@ -147,7 +229,15 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
       _card('जन्म विवरण',[
         ListTile(contentPadding:EdgeInsets.zero,title:const Text('जन्मतिथि'),subtitle:Text(d==null?'तारीख चुनें':d.day.toString()+'/'+d.month.toString()+'/'+d.year.toString()),trailing:const Icon(Icons.calendar_month),onTap:_pickDate),
         ListTile(contentPadding:EdgeInsets.zero,title:const Text('जन्म का सही समय'),subtitle:Text(birthTime?.format(context)??'समय चुनें'),trailing:const Icon(Icons.access_time),onTap:_pickTime),
-        TextField(controller:placeController,decoration:const InputDecoration(labelText:'जन्म स्थान / शहर',hintText:'जैसे: Deoghar, Jharkhand',prefixIcon:Icon(Icons.location_on_outlined))),
+        TextField(controller:placeController,decoration:const InputDecoration(labelText:'जन्म स्थान / शहर',hintText:'जैसे: Deoghar, Jharkhand, India',prefixIcon:Icon(Icons.location_on_outlined))),
+        const SizedBox(height:6),
+        SizedBox(width:double.infinity,child:OutlinedButton.icon(
+          onPressed: resolvingBirthPlace ? null : _lookupBirthPlace,
+          icon: resolvingBirthPlace
+              ? const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2))
+              : const Icon(Icons.my_location),
+          label: Text(resolvingBirthPlace ? 'स्थान खोज रहे हैं…' : 'स्थान खोजें • Coordinates और Timezone भरें'),
+        )),
         const SizedBox(height:8),
         TextField(controller:utcOffsetController,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'जन्म स्थान का UTC Offset',hintText:'+05:30',helperText:'भारत के लिए +05:30 • अन्य देशों के लिए उस तारीख का सही UTC offset भरें',prefixIcon:Icon(Icons.public))),
         const SizedBox(height:8),
@@ -182,7 +272,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
           ])
         else
           _card('वैदिक चंद्र राशि • लाहिरी', [const Text('चंद्र राशि निकालने के लिए जन्मतिथि, जन्म का सही समय और सही UTC offset भरें। भारत के लिए +05:30 रखें।',style:TextStyle(height:1.5))]),
-        _card('वैदिक कुंडली • गणना की स्थिति',[const Text('लाहिरी mean अयनांश से चंद्र राशि, नक्षत्र और चरण का प्रारंभिक परिणाम ऊपर दिखाया गया है। अभी लग्न, 12 भाव, सभी ग्रहों की स्थिति, दशा और पंचांग शामिल नहीं हैं। पूर्ण कुंडली के लिए जन्म स्थान के coordinates, historical timezone handling, nutation correction और स्वतंत्र ephemeris validation जोड़ना बाकी है.'),const SizedBox(height:8),Text('जन्म स्थान: '+(placeController.text.trim().isEmpty?'नहीं भरा':placeController.text.trim())+' • समय: '+(birthTime?.format(context)??'नहीं भरा')+' • UTC offset: '+utcOffsetController.text.trim())]),
+        _card('वैदिक कुंडली • गणना की स्थिति',[const Text('लाहिरी mean अयनांश से चंद्र राशि, नक्षत्र और चरण का प्रारंभिक परिणाम ऊपर दिखाया गया है। अभी लग्न, 12 भाव, सभी ग्रहों की स्थिति, दशा और पंचांग शामिल नहीं हैं। पूर्ण कुंडली के लिए जन्म स्थान के coordinates, historical timezone handling, nutation correction और स्वतंत्र ephemeris validation जोड़ना बाकी है.'),const SizedBox(height:8),Text('जन्म स्थान: '+(placeController.text.trim().isEmpty?'नहीं भरा':placeController.text.trim())+' • समय: '+(birthTime?.format(context)??'नहीं भरा')+' • UTC offset: '+utcOffsetController.text.trim()+(birthTimezoneId == null ? '' : ' • Timezone: $birthTimezoneId'))]),
         _card('रत्न और मंत्र के बारे में सावधानी',[const Text('रत्नों और ग्रह-प्रभाव से जुड़े सुझाव पारंपरिक ज्योतिषीय मान्यताएँ हैं, वैज्ञानिक रूप से सिद्ध उपचार या सफलता की गारंटी नहीं। नीलम, पुखराज, मूंगा जैसे महँगे रत्न केवल इस सामान्य जानकारी के आधार पर न पहनें। मंत्र-जाप श्रद्धा और व्यक्तिगत साधना के रूप में करें.')]),
       ],
     ]));
