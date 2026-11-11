@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'astrology/astronomy_engine.dart';
 
 class RashiProfilePage extends StatefulWidget {
   const RashiProfilePage({super.key});
@@ -10,6 +11,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
   DateTime? dob;
   TimeOfDay? birthTime;
   final placeController = TextEditingController();
+  final utcOffsetController = TextEditingController(text: '+05:30');
   bool loading = true;
   static const rashis = [
     ['मेष','Aries','21 मार्च – 19 अप्रैल','मूंगा','श्री हनुमान जी / भगवान शिव','ॐ हनुमते नमः'],
@@ -41,6 +43,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     if(raw!=null) dob=DateTime.tryParse(raw);
     if(t!=null&&t.length==2) birthTime=TimeOfDay(hour:int.tryParse(t[0])??0,minute:int.tryParse(t[1])??0);
     placeController.text=p.getString('profile_birth_place')??'';
+    utcOffsetController.text=p.getString('profile_utc_offset')??'+05:30';
     if(mounted)setState(()=>loading=false);
   }
   Future<void> _save() async {
@@ -48,6 +51,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     if(dob!=null) await p.setString('profile_birth_date',dob!.toIso8601String());
     if(birthTime!=null) await p.setString('profile_birth_time',birthTime!.hour.toString().padLeft(2,'0')+':'+birthTime!.minute.toString().padLeft(2,'0'));
     await p.setString('profile_birth_place',placeController.text.trim());
+    await p.setString('profile_utc_offset',utcOffsetController.text.trim());
     if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('जन्म विवरण इसी फोन में सेव हो गया।')));
     if(mounted)setState((){});
   }
@@ -56,6 +60,96 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     while(n>9){n=n.toString().split('').fold<int>(0,(a,b)=>a+int.parse(b));}
     return n;
   }
+  int? _offsetMinutes() {
+    final match = RegExp(r'^([+-])(\\d{2}):(\\d{2})
+  int _bhagyank(DateTime d)=>_reduce(d.day.toString()+d.month.toString()+d.year.toString());
+  int _sunSign(DateTime d){
+    final m=d.month,day=d.day;
+    if((m==3&&day>=21)||(m==4&&day<=19))return 0;
+    if((m==4&&day>=20)||(m==5&&day<=20))return 1;
+    if((m==5&&day>=21)||(m==6&&day<=20))return 2;
+    if((m==6&&day>=21)||(m==7&&day<=22))return 3;
+    if((m==7&&day>=23)||(m==8&&day<=22))return 4;
+    if((m==8&&day>=23)||(m==9&&day<=22))return 5;
+    if((m==9&&day>=23)||(m==10&&day<=22))return 6;
+    if((m==10&&day>=23)||(m==11&&day<=21))return 7;
+    if((m==11&&day>=22)||(m==12&&day<=21))return 8;
+    if((m==12&&day>=22)||(m==1&&day<=19))return 9;
+    if((m==1&&day>=20)||(m==2&&day<=18))return 10;
+    return 11;
+  }
+  Future<void> _pickDate() async {
+    final v=await showDatePicker(context:context,initialDate:dob??DateTime(1995,1,1),firstDate:DateTime(1900),lastDate:DateTime.now(),helpText:'जन्मतिथि चुनें');
+    if(v!=null)setState(()=>dob=v);
+  }
+  Future<void> _pickTime() async {
+    final v=await showTimePicker(context:context,initialTime:birthTime??const TimeOfDay(hour:6,minute:0));
+    if(v!=null)setState(()=>birthTime=v);
+  }
+  Widget _card(String title,List<Widget> children)=>Card(margin:const EdgeInsets.only(bottom:12),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:17,fontWeight:FontWeight.bold,color:Color(0xFF754414))),const SizedBox(height:10),...children])));
+  Widget _line(String label,String value)=>Padding(padding:const EdgeInsets.only(bottom:9),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(label,style:TextStyle(fontSize:12,color:Colors.brown.shade500)),const SizedBox(height:3),SelectableText(value,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w600))]));
+  @override
+  void dispose(){placeController.dispose();utcOffsetController.dispose();super.dispose();}
+  @override
+  Widget build(BuildContext context){
+    if(loading)return const Scaffold(body:Center(child:CircularProgressIndicator()));
+    final d=dob;
+    final sign=d==null?null:rashis[_sunSign(d)];
+    final mul=d==null?null:_mulank(d);
+    final bhag=d==null?null:_bhagyank(d);
+    final mg=mul==null?null:numberGuides[mul]!;
+    final bg=bhag==null?null:numberGuides[bhag]!;
+    final vedicMoon = _vedicMoonPosition();
+    return Scaffold(appBar:AppBar(title:const Text('मेरी राशि और अंक ज्योतिष')),body:ListView(padding:const EdgeInsets.all(16),children:[
+      Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(borderRadius:BorderRadius.circular(20),gradient:const LinearGradient(colors:[Color(0xFF492A17),Color(0xFF9B5B25)])),child:const Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('अपनी जन्म जानकारी भरें',style:TextStyle(color:Color(0xFFFFD98A),fontSize:21,fontWeight:FontWeight.bold)),SizedBox(height:6),Text('जन्मतिथि, सही समय और जन्म स्थान से अपनी ज्योतिष प्रोफ़ाइल तैयार करें।',style:TextStyle(color:Colors.white,height:1.5))])),
+      const SizedBox(height:12),
+      _card('जन्म विवरण',[
+        ListTile(contentPadding:EdgeInsets.zero,title:const Text('जन्मतिथि'),subtitle:Text(d==null?'तारीख चुनें':d.day.toString()+'/'+d.month.toString()+'/'+d.year.toString()),trailing:const Icon(Icons.calendar_month),onTap:_pickDate),
+        ListTile(contentPadding:EdgeInsets.zero,title:const Text('जन्म का सही समय'),subtitle:Text(birthTime?.format(context)??'समय चुनें'),trailing:const Icon(Icons.access_time),onTap:_pickTime),
+        TextField(controller:placeController,decoration:const InputDecoration(labelText:'जन्म स्थान / शहर',hintText:'जैसे: Deoghar, Jharkhand',prefixIcon:Icon(Icons.location_on_outlined))),
+        const SizedBox(height:8),
+        TextField(controller:utcOffsetController,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'जन्म स्थान का UTC Offset',hintText:'+05:30',helperText:'भारत के लिए +05:30 • अन्य देशों के लिए उस तारीख का सही UTC offset भरें',prefixIcon:Icon(Icons.public))),
+        const SizedBox(height:12),
+        SizedBox(width:double.infinity,child:FilledButton(onPressed:_save,style:FilledButton.styleFrom(backgroundColor:const Color(0xFF754414),minimumSize:const Size.fromHeight(48)),child:const Text('जन्म विवरण सेव करें'))),
+      ]),
+      if(d==null) const Text('पहले जन्मतिथि, समय और जन्म स्थान भरें।',style:TextStyle(color:Colors.brown)) else ...[
+        _card('अंक ज्योतिष के अनुसार आपका मूलांक: '+mul.toString(),[const Text('जन्म के दिन के अंकों को जोड़कर मूलांक निकाला जाता है.'),_line('पारंपरिक आराध्य देव',mg![0]),_line('मंत्र',mg[1])]),
+        _card('अंक ज्योतिष के अनुसार आपका भाग्यांक: '+bhag.toString(),[const Text('पूरी जन्मतिथि के अंकों को जोड़कर भाग्यांक निकाला जाता है.'),_line('पारंपरिक आराध्य देव',bg![0]),_line('मंत्र',bg[1])]),
+        _card('जन्मतिथि आधारित पश्चिमी सूर्य-राशि संकेत: '+sign![0]+' ('+sign[1]+')',[_line('तारीख सीमा',sign[2]),_line('पारंपरिक आराध्य देव',sign[4]),_line('मंत्र',sign[5]),_line('परंपरागत रत्न-संबंध',sign[3])]),
+        if (vedicMoon != null)
+          _card('वैदिक चंद्र राशि • लाहिरी (mean)', [
+            _line('जन्म चंद्र राशि', vedicMoon.rashi),
+            _line('जन्म नक्षत्र', vedicMoon.nakshatra),
+            _line('नक्षत्र चरण', vedicMoon.nakshatraPada.toString()),
+            _line('निरयण चंद्र longitude', vedicMoon.siderealLongitude.toStringAsFixed(4)+'°'),
+            const Text('गणना नोट: यह Meeus-आधारित चंद्र स्थिति और लाहिरी mean अयनांश के प्रारंभिक मॉडल पर आधारित है। Nutation correction और स्वतंत्र पंचांग cross-validation अभी बाकी है; राशि-सीमा के निकट परिणाम को अंतिम कुंडली न मानें.',style:TextStyle(fontSize:12,height:1.5,color:Colors.brown)),
+          ])
+        else
+          _card('वैदिक चंद्र राशि • लाहिरी', [const Text('चंद्र राशि निकालने के लिए जन्मतिथि, जन्म का सही समय और सही UTC offset भरें। भारत के लिए +05:30 रखें।',style:TextStyle(height:1.5))]),
+        _card('वैदिक जन्म-कुंडली की गणना',[const Text('वैदिक चंद्र राशि, लग्न, नक्षत्र और ग्रह-स्थिति निकालने के लिए जन्मतिथि, सही समय और स्थान के आधार पर खगोलीय पंचांग गणना जरूरी है। यह गणना अभी ऐप में कनेक्ट नहीं है; इसलिए ऊपर की सूर्य-राशि को वैदिक चंद्र राशि बताकर नहीं दिखाया जा रहा.'),const SizedBox(height:8),Text('जन्म स्थान: '+(placeController.text.trim().isEmpty?'नहीं भरा':placeController.text.trim())+' • समय: '+(birthTime?.format(context)??'नहीं भरा'))]),
+        _card('रत्न और मंत्र के बारे में सावधानी',[const Text('रत्नों और ग्रह-प्रभाव से जुड़े सुझाव पारंपरिक ज्योतिषीय मान्यताएँ हैं, वैज्ञानिक रूप से सिद्ध उपचार या सफलता की गारंटी नहीं। नीलम, पुखराज, मूंगा जैसे महँगे रत्न केवल इस सामान्य जानकारी के आधार पर न पहनें। मंत्र-जाप श्रद्धा और व्यक्तिगत साधना के रूप में करें.')]),
+      ],
+    ]));
+  }
+}
+).firstMatch(utcOffsetController.text.trim());
+    if (match == null) return null;
+    final hours = int.parse(match.group(2)!);
+    final minutes = int.parse(match.group(3)!);
+    if (hours > 14 || minutes > 59 || (hours == 14 && minutes != 0)) return null;
+    final value = hours * 60 + minutes;
+    return match.group(1) == '-' ? -value : value;
+  }
+  VedicLunarPosition? _vedicMoonPosition() {
+    if (dob == null || birthTime == null) return null;
+    final offset = _offsetMinutes();
+    if (offset == null) return null;
+    final localAsUtc = DateTime.utc(dob!.year, dob!.month, dob!.day, birthTime!.hour, birthTime!.minute);
+    final birthUtc = localAsUtc.subtract(Duration(minutes: offset));
+    final snapshot = const AstronomyEngine().positionsAtUtc(birthUtc);
+    return VedicLunarPosition.fromTropicalMoon(snapshot.moonTropicalLongitude, birthUtc);
+  }
+
   int _mulank(DateTime d)=>_reduce(d.day.toString());
   int _bhagyank(DateTime d)=>_reduce(d.day.toString()+d.month.toString()+d.year.toString());
   int _sunSign(DateTime d){
