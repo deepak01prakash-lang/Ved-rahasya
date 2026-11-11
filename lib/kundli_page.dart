@@ -147,7 +147,6 @@ class _KundliPageState extends State<KundliPage> {
     }
 
     final c = chart!;
-    final d9Asc = c.navamshaSign(c.lagnaLongitude);
     final dasha = c.vimshottari.mahadashas;
     final now = DateTime.now().toUtc();
     final active = dasha.where((p) => !now.isBefore(p.start) && now.isBefore(p.end)).toList();
