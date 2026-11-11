@@ -48,6 +48,21 @@ void main() {
       }
     });
 
+    test('D3 follows odd/even sign Drekkana starting rules', () {
+      final chart = engine.calculate(
+        birthUtc: DateTime.utc(2000, 1, 1, 12),
+        latitude: 0,
+        longitudeEast: 0,
+      );
+      // Odd signs: same, 5th, 9th. Even signs: 9th, 5th, same.
+      expect(chart.divisionalSign(0.1, 3), 0); // Aries -> Aries
+      expect(chart.divisionalSign(10.1, 3), 4); // Aries -> Leo
+      expect(chart.divisionalSign(20.1, 3), 8); // Aries -> Sagittarius
+      expect(chart.divisionalSign(30.1, 3), 9); // Taurus -> Capricorn
+      expect(chart.divisionalSign(40.1, 3), 1); // Taurus -> Taurus
+      expect(chart.divisionalSign(50.1, 3), 5); // Taurus -> Virgo
+    });
+
     test('D27 starts from the correct elemental signs', () {
       final chart = engine.calculate(
         birthUtc: DateTime.utc(2000, 1, 1, 12),
@@ -102,6 +117,9 @@ void main() {
       expect(timeline.birthMahadasha, 'केतु');
       expect(timeline.balanceAtBirth.inDays, greaterThan(0));
       expect(timeline.mahadashas, isNotEmpty);
+      // Birth Mahadasha is Ketu; after the first nine-period sequence,
+      // the next complete cycle must restart with Ketu, not Venus.
+      expect(timeline.mahadashas[9].lord, 'केतु');
       final first = timeline.antardashas(timeline.mahadashas.first);
       expect(first, hasLength(9));
       expect(first.first.start, timeline.mahadashas.first.start);
