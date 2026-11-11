@@ -14,19 +14,19 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: MeditationPage()));
 
     expect(find.text('05:00'), findsOneWidget);
-    await tester.ensureVisible(find.text('शुरू करें'));
+    await tester.scrollUntilVisible(find.text('शुरू करें'), 250, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('शुरू करें'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('04:58'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('रोकें'));
+    await tester.scrollUntilVisible(find.text('रोकें'), 250, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('रोकें'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('04:58'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('रीसेट'));
+    await tester.scrollUntilVisible(find.text('रीसेट'), 250, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('रीसेट'));
     await tester.pump();
     expect(find.text('05:00'), findsOneWidget);
