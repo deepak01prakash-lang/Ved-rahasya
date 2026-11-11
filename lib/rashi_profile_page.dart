@@ -61,7 +61,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     return n;
   }
   int? _offsetMinutes() {
-    final match = RegExp(r'^([+-])(\\d{2}):(\\d{2})$').firstMatch(utcOffsetController.text.trim());
+    final match = RegExp(r'^([+-])(\d{2}):(\d{2})$').firstMatch(utcOffsetController.text.trim());
     if (match == null) return null;
     final hours = int.parse(match.group(2)!);
     final minutes = int.parse(match.group(3)!);
