@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:audioplayers/audioplayers.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,7 +43,160 @@ class VedRahasyaApp extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         ),
       ),
-      home: const HomeScreen(),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  final AudioPlayer _player = AudioPlayer();
+  Timer? _timer;
+  bool _musicEnabled = true;
+  bool _ready = false;
+  bool _opened = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startIntro();
+  }
+
+  Future<void> _startIntro() async {
+    final prefs = await SharedPreferences.getInstance();
+    _musicEnabled = prefs.getBool('intro_music_enabled') ?? true;
+    if (!mounted) return;
+    setState(() => _ready = true);
+    if (_musicEnabled) {
+      try {
+        await _player.setReleaseMode(ReleaseMode.stop);
+        await _player.setVolume(0.32);
+        await _player.play(AssetSource('audio/ved_rahasya_theme.wav'));
+      } catch (_) {
+        // The splash and navigation remain usable if audio is unavailable.
+      }
+    }
+    _timer = Timer(const Duration(milliseconds: 5500), _openHome);
+  }
+
+  Future<void> _toggleMusic() async {
+    final next = !_musicEnabled;
+    setState(() => _musicEnabled = next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('intro_music_enabled', next);
+    if (next) {
+      try {
+        await _player.setReleaseMode(ReleaseMode.stop);
+        await _player.setVolume(0.32);
+        await _player.play(AssetSource('audio/ved_rahasya_theme.wav'));
+      } catch (_) {}
+    } else {
+      await _player.stop();
+    }
+  }
+
+  void _openHome() {
+    if (_opened || !mounted) return;
+    _opened = true;
+    _timer?.cancel();
+    _player.stop();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF160D09), Color(0xFF492A17), Color(0xFF8B4D20)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(),
+              Container(
+                width: 112,
+                height: 112,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFFD98A), width: 1.5),
+                  color: const Color(0x22FFD98A),
+                ),
+                child: const Icon(Icons.temple_hindu_rounded,
+                    color: Color(0xFFFFD98A), size: 62),
+              ),
+              const SizedBox(height: 28),
+              const Text('॥ ॐ ॥',
+                  style: TextStyle(color: Color(0xFFFFD98A), fontSize: 28)),
+              const SizedBox(height: 12),
+              const Text('वेद रहस्य',
+                  style: TextStyle(
+                    color: Color(0xFFFFE8BE),
+                    fontSize: 38,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                  )),
+              const SizedBox(height: 9),
+              const Text('VED RAHASYA',
+                  style: TextStyle(
+                    color: Color(0xFFFFD98A),
+                    fontSize: 13,
+                    letterSpacing: 5,
+                    fontWeight: FontWeight.w500,
+                  )),
+              const SizedBox(height: 20),
+              const Text('ज्ञान  •  भक्ति  •  ज्योतिष',
+                  style: TextStyle(color: Color(0xFFFFE8BE), fontSize: 13)),
+              const Spacer(),
+              if (_ready)
+                TextButton.icon(
+                  onPressed: _toggleMusic,
+                  icon: Icon(
+                    _musicEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+                    color: const Color(0xFFFFD98A),
+                  ),
+                  label: Text(
+                    _musicEnabled ? 'परिचय संगीत बंद करें' : 'परिचय संगीत चालू करें',
+                    style: const TextStyle(color: Color(0xFFFFE8BE)),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 26, top: 4),
+                child: TextButton(
+                  onPressed: _openHome,
+                  child: const Text('आगे बढ़ें  ›',
+                      style: TextStyle(
+                        color: Color(0xFFFFD98A),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      )),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
