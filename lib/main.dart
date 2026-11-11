@@ -518,7 +518,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 10),
         sectionCard(
           title: 'दैनिक पंचांग',
-          subtitle: 'तिथि • वार • नक्षत्र • योग • करण • मुहूर्त',
+          subtitle: 'तिथि • वार • नक्षत्र • योग • करण • सूर्योदय/सूर्यास्त',
           icon: Icons.calendar_month_rounded, tint: const Color(0xFF287A68),
           tag: 'सूर्योदय आधारित',
           onTap: () => Navigator.of(context).push(
