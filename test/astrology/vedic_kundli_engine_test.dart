@@ -112,6 +112,14 @@ void main() {
       final strengths = GrahaDrishti.strengths(chart);
       expect(strengths, hasLength(9));
       expect(strengths.map((s) => s.graha).toSet(), contains('सूर्य'));
+      final indicators = KundliInterpretation.indicators(chart);
+      expect(indicators.map((item) => item.name), containsAll([
+        'रुचक महापुरुष योग',
+        'भद्र महापुरुष योग',
+        'हंस महापुरुष योग',
+        'मालव्य महापुरुष योग',
+        'शश महापुरुष योग',
+      ]));
       final aspects = GrahaDrishti.aspects(chart);
       expect(aspects.where((a) => a.fromGraha == 'मंगल'), hasLength(3));
       expect(aspects.where((a) => a.fromGraha == 'गुरु'), hasLength(3));
@@ -152,6 +160,10 @@ void main() {
       expect(first, hasLength(9));
       expect(first.first.start, timeline.mahadashas.first.start);
       expect(first.last.end, timeline.mahadashas.first.end);
+      final subPeriod = timeline.pratyantardashas(first.first);
+      expect(subPeriod, hasLength(9));
+      expect(subPeriod.first.start, first.first.start);
+      expect(subPeriod.last.end, first.first.end);
     });
   });
 }
