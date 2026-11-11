@@ -23,6 +23,11 @@ void main() {
     expect(find.text('तिथि'), findsOneWidget);
     expect(find.text('नक्षत्र'), findsOneWidget);
     expect(find.text('योग'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('करण'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('करण'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
