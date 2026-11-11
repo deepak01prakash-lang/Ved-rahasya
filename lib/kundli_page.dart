@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'astrology/astronomy_engine.dart';
 import 'astrology/vedic_kundli_engine.dart';
 import 'astrology/kundli_interpretation.dart';
+import 'astrology/graha_drishti.dart';
 
 class KundliPage extends StatefulWidget {
   const KundliPage({super.key});
@@ -248,6 +249,40 @@ class _KundliPageState extends State<KundliPage> {
                 ),
             ])),
           ),
+          _sectionTitle('ग्रहबल और स्थिति', 'उच्च, नीच, स्वराशि तथा सूर्य से निकटता के पारंपरिक संकेत'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Card(child: Column(children: [
+              for (final strength in GrahaDrishti.strengths(c))
+                ListTile(
+                  dense: true,
+                  title: Text(strength.graha, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text('${strength.dignity} • सूर्य से ${strength.sunDistance.toStringAsFixed(1)}°'),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (strength.isCombust) const Text('अस्त', style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                      if (strength.isExalted) const Text('उच्च', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      if (strength.isDebilitated) const Text('नीच', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                      if (strength.isOwnSign) const Text('स्वराशि', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+            ])),
+          ),
+          _sectionTitle('ग्रहों की दृष्टि', 'पराशरी राशि-दृष्टि: सभी ग्रहों की सप्तम तथा मंगल, गुरु और शनि की विशेष दृष्टि'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Card(child: Column(children: [
+              for (final aspect in GrahaDrishti.aspects(c))
+                ListTile(
+                  dense: true,
+                  title: Text('${aspect.fromGraha} की ${aspect.aspectName} दृष्टि', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text('भाव ${aspect.toHouse} • ${aspect.toRashi} • वहाँ ग्रह: ${aspect.occupants.isEmpty ? 'कोई नहीं' : aspect.occupants.join('، ')}'),
+                ),
+            ])),
+          ),
           _sectionTitle('भाव अनुसार जीवन के विषय', 'यह प्रत्येक भाव का पारंपरिक क्षेत्र बताता है; ग्रह स्थिति के साथ पढ़ें'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -279,7 +314,7 @@ class _KundliPageState extends State<KundliPage> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: const Color(0xFFFFF1D9), borderRadius: BorderRadius.circular(14)),
             child: const Text(
-              'गणना की सीमा: यह प्रारंभिक ऑफलाइन मॉडल Meeus/VSOP87 ग्रह स्थितियों, mean Lahiri अयनांश, mean Rahu-Ketu और whole-sign भावों पर आधारित है। D9 और विंशोत्तरी क्रम जोड़े गए हैं। D2–D60 के शेष वर्ग, भाव-चलित/श्रीपति, true node, दशा सूक्ष्म-स्तर और स्वतंत्र पंचांग/Swiss Ephemeris cross-validation अभी शेष हैं। परिणाम को प्रमाणित पेशेवर पंचांग या निश्चित भविष्यवाणी न मानें।',
+              'गणना की सीमा: यह प्रारंभिक ऑफलाइन मॉडल Meeus/VSOP87 ग्रह स्थितियों, mean Lahiri अयनांश, mean Rahu-Ketu और whole-sign भावों पर आधारित है। ग्रहबल/अस्त के लिए पारंपरिक स्थिर कोण-सीमाएँ हैं; दृष्टि राशि-आधारित है। D2–D60 के शेष वर्ग, भाव-चलित/श्रीपति, true node, दशा सूक्ष्म-स्तर और स्वतंत्र पंचांग/Swiss Ephemeris cross-validation अभी शेष हैं। परिणाम को प्रमाणित पेशेवर पंचांग या निश्चित भविष्यवाणी न मानें।',
               style: TextStyle(fontSize: 12, height: 1.55, color: Color(0xFF68431F)),
             ),
           ),
