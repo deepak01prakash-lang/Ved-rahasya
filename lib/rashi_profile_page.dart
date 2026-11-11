@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'astrology/astronomy_engine.dart';
+import 'kundli_page.dart';
 
 class RashiProfilePage extends StatefulWidget {
   const RashiProfilePage({super.key});
@@ -12,6 +13,8 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
   TimeOfDay? birthTime;
   final placeController = TextEditingController();
   final utcOffsetController = TextEditingController(text: '+05:30');
+  final latitudeController = TextEditingController();
+  final longitudeController = TextEditingController();
   bool loading = true;
   static const rashis = [
     ['मेष','Aries','21 मार्च – 19 अप्रैल','मूंगा','श्री हनुमान जी / भगवान शिव','ॐ हनुमते नमः'],
@@ -44,6 +47,8 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     if(t!=null&&t.length==2) birthTime=TimeOfDay(hour:int.tryParse(t[0])??0,minute:int.tryParse(t[1])??0);
     placeController.text=p.getString('profile_birth_place')??'';
     utcOffsetController.text=p.getString('profile_utc_offset')??'+05:30';
+    latitudeController.text=p.getString('profile_latitude')??'';
+    longitudeController.text=p.getString('profile_longitude')??'';
     if(mounted)setState(()=>loading=false);
   }
   Future<void> _save() async {
@@ -52,6 +57,8 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     if(birthTime!=null) await p.setString('profile_birth_time',birthTime!.hour.toString().padLeft(2,'0')+':'+birthTime!.minute.toString().padLeft(2,'0'));
     await p.setString('profile_birth_place',placeController.text.trim());
     await p.setString('profile_utc_offset',utcOffsetController.text.trim());
+    await p.setString('profile_latitude',latitudeController.text.trim());
+    await p.setString('profile_longitude',longitudeController.text.trim());
     if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('जन्म विवरण इसी फोन में सेव हो गया।')));
     if(mounted)setState((){});
   }
@@ -106,7 +113,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
   Widget _card(String title,List<Widget> children)=>Card(margin:const EdgeInsets.only(bottom:12),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:17,fontWeight:FontWeight.bold,color:Color(0xFF754414))),const SizedBox(height:10),...children])));
   Widget _line(String label,String value)=>Padding(padding:const EdgeInsets.only(bottom:9),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(label,style:TextStyle(fontSize:12,color:Colors.brown.shade500)),const SizedBox(height:3),SelectableText(value,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w600))]));
   @override
-  void dispose(){placeController.dispose();utcOffsetController.dispose();super.dispose();}
+  void dispose(){placeController.dispose();utcOffsetController.dispose();latitudeController.dispose();longitudeController.dispose();super.dispose();}
   @override
   Widget build(BuildContext context){
     if(loading)return const Scaffold(body:Center(child:CircularProgressIndicator()));
@@ -126,8 +133,21 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
         TextField(controller:placeController,decoration:const InputDecoration(labelText:'जन्म स्थान / शहर',hintText:'जैसे: Deoghar, Jharkhand',prefixIcon:Icon(Icons.location_on_outlined))),
         const SizedBox(height:8),
         TextField(controller:utcOffsetController,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'जन्म स्थान का UTC Offset',hintText:'+05:30',helperText:'भारत के लिए +05:30 • अन्य देशों के लिए उस तारीख का सही UTC offset भरें',prefixIcon:Icon(Icons.public))),
+        const SizedBox(height:8),
+        TextField(controller:latitudeController,keyboardType:const TextInputType.numberWithOptions(decimal:true,signed:true),decoration:const InputDecoration(labelText:'अक्षांश (Latitude)',hintText:'जैसे 24.03',helperText:'उत्तर +, दक्षिण −',prefixIcon:Icon(Icons.explore_outlined))),
+        const SizedBox(height:8),
+        TextField(controller:longitudeController,keyboardType:const TextInputType.numberWithOptions(decimal:true,signed:true),decoration:const InputDecoration(labelText:'देशांतर (Longitude)',hintText:'जैसे 84.07',helperText:'पूर्व +, पश्चिम −',prefixIcon:Icon(Icons.explore))),
+
         const SizedBox(height:12),
         SizedBox(width:double.infinity,child:FilledButton(onPressed:_save,style:FilledButton.styleFrom(backgroundColor:const Color(0xFF754414),minimumSize:const Size.fromHeight(48)),child:const Text('जन्म विवरण सेव करें'))),
+        const SizedBox(height:10),
+        SizedBox(width:double.infinity,child:OutlinedButton.icon(
+          onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>const KundliPage())),
+          icon:const Icon(Icons.grid_view_rounded),
+          label:const Text('पूर्ण वैदिक कुंडली खोलें'),
+          style:OutlinedButton.styleFrom(minimumSize:const Size.fromHeight(48)),
+        )),
+
       ]),
       if(d==null) const Text('पहले जन्मतिथि, समय और जन्म स्थान भरें।',style:TextStyle(color:Colors.brown)) else ...[
         _card('अंक ज्योतिष के अनुसार आपका मूलांक: '+mul.toString(),[const Text('जन्म के दिन के अंकों को जोड़कर मूलांक निकाला जाता है.'),_line('पारंपरिक आराध्य देव',mg![0]),_line('मंत्र',mg[1])]),
