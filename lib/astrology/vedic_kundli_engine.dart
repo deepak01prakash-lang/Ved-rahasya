@@ -267,6 +267,25 @@ class VimshottariTimeline {
     );
   }
 
+  List<DashaPeriod> pratyantardashas(DashaPeriod antar) {
+    final startIndex = lords.indexOf(antar.lord);
+    final result = <DashaPeriod>[];
+    var cursor = antar.start;
+    for (var i = 0; i < 9; i++) {
+      final index = (startIndex + i) % 9;
+      final end = i == 8
+          ? antar.end
+          : cursor.add(Duration(
+              microseconds: (antar.duration.inMicroseconds *
+                      years[index] / totalYears)
+                  .round(),
+            ));
+      result.add(DashaPeriod(lord: lords[index], start: cursor, end: end));
+      cursor = end;
+    }
+    return result;
+  }
+
   List<DashaPeriod> antardashas(DashaPeriod maha) {
     final startIndex = lords.indexOf(maha.lord);
     final result = <DashaPeriod>[];
