@@ -12,6 +12,9 @@ dependencies:
   shared_preferences: ^2.5.3
   audioplayers: ^6.5.1
   astronomia: ^1.1.1
+  geocoding: ^5.0.1
+  timezone: ^0.11.2
+  timezone_finder: ^1.0.1
 
 dev_dependencies:
   flutter_test:
