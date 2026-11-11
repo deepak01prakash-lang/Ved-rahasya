@@ -143,7 +143,7 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
           ])
         else
           _card('वैदिक चंद्र राशि • लाहिरी', [const Text('चंद्र राशि निकालने के लिए जन्मतिथि, जन्म का सही समय और सही UTC offset भरें। भारत के लिए +05:30 रखें।',style:TextStyle(height:1.5))]),
-        _card('वैदिक जन्म-कुंडली की गणना',[const Text('वैदिक चंद्र राशि, लग्न, नक्षत्र और ग्रह-स्थिति निकालने के लिए जन्मतिथि, सही समय और स्थान के आधार पर खगोलीय पंचांग गणना जरूरी है। यह गणना अभी ऐप में कनेक्ट नहीं है; इसलिए ऊपर की सूर्य-राशि को वैदिक चंद्र राशि बताकर नहीं दिखाया जा रहा.'),const SizedBox(height:8),Text('जन्म स्थान: '+(placeController.text.trim().isEmpty?'नहीं भरा':placeController.text.trim())+' • समय: '+(birthTime?.format(context)??'नहीं भरा'))]),
+        _card('वैदिक कुंडली • गणना की स्थिति',[const Text('लाहिरी mean अयनांश से चंद्र राशि, नक्षत्र और चरण का प्रारंभिक परिणाम ऊपर दिखाया गया है। अभी लग्न, 12 भाव, सभी ग्रहों की स्थिति, दशा और पंचांग शामिल नहीं हैं। पूर्ण कुंडली के लिए जन्म स्थान के coordinates, historical timezone handling, nutation correction और स्वतंत्र ephemeris validation जोड़ना बाकी है.'),const SizedBox(height:8),Text('जन्म स्थान: '+(placeController.text.trim().isEmpty?'नहीं भरा':placeController.text.trim())+' • समय: '+(birthTime?.format(context)??'नहीं भरा')+' • UTC offset: '+utcOffsetController.text.trim())]),
         _card('रत्न और मंत्र के बारे में सावधानी',[const Text('रत्नों और ग्रह-प्रभाव से जुड़े सुझाव पारंपरिक ज्योतिषीय मान्यताएँ हैं, वैज्ञानिक रूप से सिद्ध उपचार या सफलता की गारंटी नहीं। नीलम, पुखराज, मूंगा जैसे महँगे रत्न केवल इस सामान्य जानकारी के आधार पर न पहनें। मंत्र-जाप श्रद्धा और व्यक्तिगत साधना के रूप में करें.')]),
       ],
     ]));
