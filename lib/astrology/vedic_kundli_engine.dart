@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:astronomia/astronomia.dart';
 import 'package:astronomia/elliptic.dart' as elliptic;
 import 'package:astronomia/planetposition.dart' as planets;
+import 'package:astronomia/moonposition.dart' as lunar;
 import 'package:astronomia/sidereal.dart' as sidereal;
 
 import 'astronomy_engine.dart';
@@ -88,7 +89,7 @@ class VedicKundliEngine {
       'सूर्य': (lon: snapshot.sunTropicalLongitude, lat: 0),
       'चंद्र': (
         lon: snapshot.moonTropicalLongitude,
-        lat: 0,
+        lat: toDeg(lunar.position(jd).lat),
       ),
     };
 
@@ -175,9 +176,9 @@ class VedicKundliEngine {
     final theta = localSiderealDegrees * math.pi / 180;
     final phi = latitude * math.pi / 180;
     final eps = meanObliquity(jd) + nutation(jd).dEps;
-    final y = -math.cos(theta);
-    final x = math.sin(eps) * math.tan(phi) +
-        math.cos(eps) * math.sin(theta);
+    final y = math.cos(theta);
+    final x = -(math.sin(eps) * math.tan(phi) +
+        math.cos(eps) * math.sin(theta));
     final tropicalAscendant = _normalize(math.atan2(y, x) * 180 / math.pi);
     return LahiriAyanamsha.siderealLongitude(tropicalAscendant, utc);
   }
