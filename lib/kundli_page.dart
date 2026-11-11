@@ -283,6 +283,34 @@ class _KundliPageState extends State<KundliPage> {
                 ),
             ])),
           ),
+          _sectionTitle('12 भावों के स्वामी और उनकी स्थिति', 'हर भाव का राशि-स्वामी किस भाव में बैठा है और उस पर किन ग्रहों की दृष्टि है'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Card(child: Column(children: [
+              for (final insight in KundliInterpretation.houseLords(c))
+                ExpansionTile(
+                  title: Text('भाव ${insight.house} • ${insight.rashi}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text('स्वामी: ${insight.lord} • स्थित: ${insight.placedHouse}वें भाव में'),
+                  children: [
+                    ListTile(
+                      dense: true,
+                      title: const Text('स्वामी ग्रह की स्थिति'),
+                      subtitle: Text('${insight.dignity} • ${insight.isRetrograde ? 'वक्री' : 'मार्गी'}'),
+                    ),
+                    ListTile(
+                      dense: true,
+                      title: const Text('स्वामी के भावगत विषय'),
+                      subtitle: Text(insight.placedHouseTheme),
+                    ),
+                    ListTile(
+                      dense: true,
+                      title: const Text('इस भाव पर दृष्टि'),
+                      subtitle: Text(insight.aspectedBy.isEmpty ? 'इस मॉडल में विशेष ग्रह-दृष्टि दर्ज नहीं' : insight.aspectedBy.join(' • ')),
+                    ),
+                  ],
+                ),
+            ])),
+          ),
           _sectionTitle('भाव अनुसार जीवन के विषय', 'यह प्रत्येक भाव का पारंपरिक क्षेत्र बताता है; ग्रह स्थिति के साथ पढ़ें'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
