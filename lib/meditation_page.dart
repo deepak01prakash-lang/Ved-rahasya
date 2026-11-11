@@ -128,7 +128,7 @@ class _MeditationPageState extends State<MeditationPage> {
                       children: [
                         SizedBox.expand(
                           child: CircularProgressIndicator(
-                            value: progress.clamp(0.0, 1.0),
+                            value: progress.clamp(0.0, 1.0).toDouble(),
                             strokeWidth: 9,
                             backgroundColor: const Color(0xFFEAD7B8),
                             color: const Color(0xFF9B642B),
