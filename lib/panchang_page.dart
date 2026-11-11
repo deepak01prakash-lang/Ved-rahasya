@@ -59,7 +59,7 @@ class _PanchangPageState extends State<PanchangPage> {
       localDate: DateTime(now.year, now.month, now.day),
       latitude: latitude,
       longitudeEast: longitude,
-      utcOffset: now.timeZoneOffset,
+      utcOffset: offset,
     );
   }
 
