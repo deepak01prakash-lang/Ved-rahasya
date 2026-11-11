@@ -105,8 +105,9 @@ class _KundliPageState extends State<KundliPage> {
     );
   }
 
-  Widget _chartGrid(int ascendantSign, {required bool navamsha}) {
+  Widget _chartGrid(int division) {
     final c = chart!;
+    final ascendantSign = c.divisionalSign(c.lagnaLongitude, division);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: GridView.builder(
@@ -119,7 +120,7 @@ class _KundliPageState extends State<KundliPage> {
         itemBuilder: (context, index) {
           final sign = (ascendantSign + index) % 12;
           final occupants = c.grahas.where((g) =>
-            (navamsha ? c.navamshaSign(g.longitude) : g.rashiIndex) == sign).toList();
+            c.divisionalSign(g.longitude, division) == sign).toList();
           return _houseCard(index + 1, sign, occupants);
         },
       ),
@@ -150,6 +151,13 @@ class _KundliPageState extends State<KundliPage> {
     final dasha = c.vimshottari.mahadashas;
     final now = DateTime.now().toUtc();
     final active = dasha.where((p) => !now.isBefore(p.start) && now.isBefore(p.end)).toList();
+    const vargaNames = <int, String>{
+      2: 'D2 • होरा', 3: 'D3 • द्रेष्काण', 4: 'D4 • चतुर्थांश',
+      7: 'D7 • सप्तमांश', 10: 'D10 • दशमांश', 12: 'D12 • द्वादशांश',
+      16: 'D16 • षोडशांश', 20: 'D20 • विंशांश', 24: 'D24 • चतुर्विंशांश',
+      27: 'D27 • भांश', 30: 'D30 • त्रिंशांश', 40: 'D40 • खवेदांश',
+      45: 'D45 • अक्षवेदांश', 60: 'D60 • षष्ट्यंश',
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('मेरी वैदिक जन्म-कुंडली')),
@@ -177,7 +185,7 @@ class _KundliPageState extends State<KundliPage> {
             ]),
           ),
           _sectionTitle('D1 • राशि / लग्न कुंडली', 'उत्तर भारतीय whole-sign भाव व्यवस्था • 12 भाव'),
-          _chartGrid(c.lagnaRashiIndex, navamsha: false),
+          _chartGrid(1),
           _sectionTitle('ग्रह स्थिति', 'निरयण longitude • लाहिरी mean अयनांश'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -193,7 +201,18 @@ class _KundliPageState extends State<KundliPage> {
             ])),
           ),
           _sectionTitle('D9 • नवांश कुंडली', 'नवांश राशि विभाजन • प्रत्येक 3°20′ का एक भाग'),
-          _chartGrid(d9Asc, navamsha: true),
+          _chartGrid(9),
+          for (final division in vargaNames.keys)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+              child: Card(
+                child: ExpansionTile(
+                  title: Text(vargaNames[division]!, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('12 भाव • ग्रहों की वर्ग कुंडली'),
+                  children: [_chartGrid(division)],
+                ),
+              ),
+            ),
           _sectionTitle('विंशोत्तरी महादशा', 'जन्म नक्षत्र के आधार पर पारंपरिक 120-वर्षीय दशा क्रम'),
           if (active.isNotEmpty)
             Padding(
