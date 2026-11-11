@@ -39,6 +39,22 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
   // Traditional gemstone associations by Vedic Moon sign. These are cultural
   // correspondences, not personalized prescriptions; suitability needs a full
   // chart review and should never be inferred from Moon sign alone.
+  // Traditional devotional associations by Vedic Moon sign. These are
+  // cultural references for bhakti, not mandatory worship prescriptions.
+  static const vedicMoonRashiDevotion = <String, List<String>>{
+    'मेष': ['श्री हनुमान जी', 'ॐ हनुमते नमः'],
+    'वृषभ': ['माँ लक्ष्मी', 'ॐ श्रीं महालक्ष्म्यै नमः'],
+    'मिथुन': ['श्री गणेश जी', 'ॐ गं गणपतये नमः'],
+    'कर्क': ['भगवान शिव', 'ॐ नमः शिवाय'],
+    'सिंह': ['सूर्य देव', 'ॐ घृणिः सूर्याय नमः'],
+    'कन्या': ['श्री गणेश जी', 'ॐ गं गणपतये नमः'],
+    'तुला': ['माँ लक्ष्मी', 'ॐ श्रीं महालक्ष्म्यै नमः'],
+    'वृश्चिक': ['श्री हनुमान जी', 'ॐ हनुमते नमः'],
+    'धनु': ['भगवान विष्णु', 'ॐ नमो भगवते वासुदेवाय'],
+    'मकर': ['शनिदेव', 'ॐ शं शनैश्चराय नमः'],
+    'कुंभ': ['शनिदेव', 'ॐ शं शनैश्चराय नमः'],
+    'मीन': ['भगवान विष्णु', 'ॐ नमो भगवते वासुदेवाय'],
+  };
   static const vedicMoonRashiGems = <String, String>{
     'मेष': 'मूंगा',
     'वृषभ': 'हीरा / ओपल',
@@ -269,7 +285,10 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
             _line('जन्म नक्षत्र', vedicMoon.nakshatra),
             _line('नक्षत्र चरण', vedicMoon.nakshatraPada.toString()),
             _line('निरयण चंद्र longitude', vedicMoon.siderealLongitude.toStringAsFixed(4)+'°'),
+            _line('पारंपरिक आराध्य देव', vedicMoonRashiDevotion[vedicMoon.rashi]?[0] ?? 'उपलब्ध नहीं'),
+            _line('भक्ति मंत्र', vedicMoonRashiDevotion[vedicMoon.rashi]?[1] ?? 'उपलब्ध नहीं'),
             _line('इस चंद्र राशि से जुड़ा पारंपरिक रत्न', vedicMoonRashiGems[vedicMoon.rashi] ?? 'उपलब्ध नहीं'),
+            const Text('आराध्य देव और मंत्र का संबंध पारंपरिक भक्ति-संदर्भ है; सभी परंपराओं में एक ही राशि के लिए एक ही देवता अनिवार्य नहीं माने जाते। अपनी श्रद्धा और गुरु-परंपरा को प्राथमिकता दें।',style:TextStyle(fontSize:12,height:1.5,color:Colors.brown)),
             const Text('रत्न संबंध केवल पारंपरिक राशि-आधारित जानकारी है, व्यक्तिगत पहनने की सलाह नहीं। रत्न चुनने से पहले पूरी जन्म-कुंडली, ग्रह-स्वामित्व और दशा का योग्य ज्योतिषी से परीक्षण कराएँ।',style:TextStyle(fontSize:12,height:1.5,color:Colors.brown)),
             const Text('गणना नोट: यह Meeus-आधारित चंद्र स्थिति और लाहिरी mean अयनांश के प्रारंभिक मॉडल पर आधारित है। Nutation correction और स्वतंत्र पंचांग cross-validation अभी बाकी है; राशि-सीमा के निकट परिणाम को अंतिम कुंडली न मानें.',style:TextStyle(fontSize:12,height:1.5,color:Colors.brown)),
           ])
