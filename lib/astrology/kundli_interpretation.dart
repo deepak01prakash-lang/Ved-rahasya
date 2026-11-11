@@ -52,6 +52,26 @@ class HouseLordInsight {
   final List<String> aspectedBy;
 }
 
+class DashaLordInsight {
+  const DashaLordInsight({
+    required this.lord,
+    required this.sign,
+    required this.house,
+    required this.dignity,
+    required this.isRetrograde,
+    required this.ruledHouses,
+    required this.houseTheme,
+  });
+
+  final String lord;
+  final String sign;
+  final int house;
+  final String dignity;
+  final bool isRetrograde;
+  final List<int> ruledHouses;
+  final String houseTheme;
+}
+
 class KundliInterpretation {
   static const houseThemes = <String>[
     'स्वभाव, शरीर और जीवन-दृष्टि',
@@ -100,6 +120,30 @@ class KundliInterpretation {
         aspectedBy: received,
       );
     });
+  }
+
+  /// Chart-specific context for a Vimshottari period lord. This is a
+  /// traditional placement summary, not a deterministic prediction.
+  static DashaLordInsight dashaLord(VedicKundli chart, String lord) {
+    final planet = chart.grahas.firstWhere((g) => g.name == lord);
+    final house = (planet.rashiIndex - chart.lagnaRashiIndex + 12) % 12 + 1;
+    final ruled = <int>[];
+    for (var index = 0; index < 12; index++) {
+      if (_rashiLords[(chart.lagnaRashiIndex + index) % 12] == lord) {
+        ruled.add(index + 1);
+      }
+    }
+    final strength = GrahaDrishti.strengths(chart)
+        .firstWhere((item) => item.graha == lord);
+    return DashaLordInsight(
+      lord: lord,
+      sign: VedicLunarPosition.rashis[planet.rashiIndex],
+      house: house,
+      dignity: strength.dignity,
+      isRetrograde: planet.isRetrograde,
+      ruledHouses: List.unmodifiable(ruled),
+      houseTheme: houseThemes[house - 1],
+    );
   }
 
   static List<HouseInsight> houses(VedicKundli chart) {
