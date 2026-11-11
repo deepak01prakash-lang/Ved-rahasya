@@ -193,14 +193,89 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _home() {
-    final categories = <Map<String, dynamic>>[
-      {'title': 'चारों वेद', 'subtitle': 'ऋग् • यजुः • साम • अथर्व', 'icon': Icons.menu_book_rounded, 'tab': 1},
-      {'title': 'भगवद्गीता', 'subtitle': '18 अध्याय • कर्म, ज्ञान, भक्ति', 'icon': Icons.auto_stories_rounded, 'tab': 2},
-      {'title': 'उपनिषद', 'subtitle': 'आत्मा और ब्रह्म का ज्ञान', 'icon': Icons.self_improvement_rounded, 'tab': 3},
-      {'title': 'मंत्र एवं जाप', 'subtitle': 'मंत्र, साधना और एकाग्रता', 'icon': Icons.spa_rounded, 'tab': 4},
-    ];
+    Widget sectionCard({
+      required String title,
+      required String subtitle,
+      required IconData icon,
+      required Color tint,
+      required VoidCallback onTap,
+      String? tag,
+    }) {
+      return Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: Color(0xFFEADBC5)),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: tint.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                  child: Icon(icon, color: tint, size: 29),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Expanded(child: Text(title, style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold,
+                          color: Color(0xFF422716),
+                        ))),
+                        if (tag != null) Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF0D7),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(tag, style: const TextStyle(
+                            fontSize: 9, color: Color(0xFF8B4D20),
+                            fontWeight: FontWeight.bold,
+                          )),
+                        ),
+                      ]),
+                      const SizedBox(height: 5),
+                      Text(subtitle, style: TextStyle(
+                        fontSize: 12, height: 1.35, color: Colors.brown.shade500,
+                      )),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right_rounded, color: Color(0xFF9B744B), size: 25),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget heading(String title, String subtitle) => Padding(
+      padding: const EdgeInsets.only(top: 22, bottom: 11),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: const TextStyle(
+          fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF422716),
+        )),
+        const SizedBox(height: 3),
+        Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.brown.shade500)),
+      ]),
+    );
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 30),
       children: [
         InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -211,225 +286,195 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(17),
               border: Border.all(color: const Color(0xFFE8D7BF)),
             ),
             child: const Row(children: [
-              Icon(Icons.search, color: Color(0xFF8B4D20)),
+              Icon(Icons.search_rounded, color: Color(0xFF8B4D20)),
               SizedBox(width: 10),
-              Expanded(child: Text('मंत्र, व्रत, पूजा-विधि या अपना सवाल खोजें',
+              Expanded(child: Text('मंत्र, श्लोक, पूजा-विधि या विषय खोजें',
                 style: TextStyle(color: Color(0xFF806B58), fontSize: 13))),
-              Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF8B4D20)),
+              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF8B4D20)),
             ]),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(27),
             gradient: const LinearGradient(
-              colors: [Color(0xFF24150F), Color(0xFF633718), Color(0xFF9B5B25)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              colors: [Color(0xFF1D120D), Color(0xFF573018), Color(0xFFA7662B)],
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
-            boxShadow: const [BoxShadow(color: Color(0x3324150F), blurRadius: 18, offset: Offset(0, 8))],
+            boxShadow: const [BoxShadow(
+              color: Color(0x3324150F), blurRadius: 20, offset: Offset(0, 8),
+            )],
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Container(
                 width: 48, height: 48,
-                decoration: BoxDecoration(color: const Color(0x33FFD98A), borderRadius: BorderRadius.circular(16)),
-                child: const Icon(Icons.self_improvement_rounded, color: Color(0xFFFFD98A), size: 30),
+                decoration: BoxDecoration(
+                  color: const Color(0x33FFD98A), borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.temple_hindu_rounded, color: Color(0xFFFFD98A), size: 29),
               ),
               const Spacer(),
-              const Text('ज्ञान • साधना • संस्कृति', style: TextStyle(color: Color(0xFFFFE5B5), fontSize: 11, letterSpacing: 1)),
+              const Text('ज्ञान  •  भक्ति  •  ज्योतिष',
+                style: TextStyle(color: Color(0xFFFFE5B5), fontSize: 11, letterSpacing: 1)),
             ]),
-            const SizedBox(height: 22),
-            const Text('॥ ॐ ॥', style: TextStyle(color: Color(0xFFFFD98A), fontSize: 34, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            const Text('सनातन ज्ञान की\nएक क्रमबद्ध यात्रा', style: TextStyle(color: Colors.white, fontSize: 27, height: 1.22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            const Text('वेदों से उपनिषदों तक, गीता से दर्शन और साधना तक — अध्ययन करें मूल संदर्भों के साथ।',
-              style: TextStyle(color: Color(0xFFFFEBD0), height: 1.55, fontSize: 14)),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
+            const Text('॥ ॐ ॥', style: TextStyle(
+              color: Color(0xFFFFD98A), fontSize: 34, fontWeight: FontWeight.w600,
+            )),
+            const SizedBox(height: 7),
+            const Text('सनातन ज्ञान का\nआपका अपना केंद्र',
+              style: TextStyle(color: Colors.white, fontSize: 27, height: 1.2, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 9),
+            const Text('ग्रंथों का अध्ययन करें, भक्ति-पाठ पढ़ें और वैदिक परंपराओं को क्रमबद्ध रूप से जानें।',
+              style: TextStyle(color: Color(0xFFFFEBD0), height: 1.5, fontSize: 13)),
+            const SizedBox(height: 16),
             FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFFD98A), foregroundColor: const Color(0xFF382012)),
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GranthaLibraryPage())),
-              icon: const Icon(Icons.explore_outlined),
-              label: const Text('सम्पूर्ण ग्रंथालय देखें'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD98A),
+                foregroundColor: const Color(0xFF382012),
+              ),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const GranthaLibraryPage()),
+              ),
+              icon: const Icon(Icons.auto_stories_rounded),
+              label: const Text('ग्रंथालय खोलें'),
             ),
           ]),
+        ),
+        heading('ज्योतिष एवं पंचांग', 'अपनी जन्म-कुंडली और दैनिक ज्योतिषीय जानकारी'),
+        sectionCard(
+          title: 'मेरी जन्म-कुंडली',
+          subtitle: 'जन्म विवरण • चंद्र राशि • नक्षत्र • लग्न • ग्रह स्थिति',
+          icon: Icons.nightlight_round, tint: const Color(0xFF6B4AA1),
+          tag: 'लाहिरी',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const RashiProfilePage()),
+          ),
+        ),
+        const SizedBox(height: 10),
+        sectionCard(
+          title: 'दैनिक पंचांग',
+          subtitle: 'तिथि • वार • नक्षत्र • योग • करण • मुहूर्त',
+          icon: Icons.calendar_month_rounded, tint: const Color(0xFF287A68),
+          tag: 'आगे जोड़ा जाएगा',
+          onTap: () => _showComingSoon('दैनिक पंचांग'),
+        ),
+        heading('सनातन ग्रंथ', 'हर ग्रंथ का अलग विभाग और क्रमबद्ध अध्ययन'),
+        sectionCard(
+          title: 'चारों वेद',
+          subtitle: 'ऋग्वेद • यजुर्वेद • सामवेद • अथर्ववेद',
+          icon: Icons.menu_book_rounded, tint: const Color(0xFF9B5B25),
+          onTap: () => setState(() => tab = 1),
+        ),
+        const SizedBox(height: 10),
+        sectionCard(
+          title: 'श्रीमद्भगवद्गीता',
+          subtitle: '18 अध्याय • श्लोक • अर्थ और जीवन में उपयोग',
+          icon: Icons.auto_stories_rounded, tint: const Color(0xFFB47724),
+          onTap: () => setState(() => tab = 2),
+        ),
+        const SizedBox(height: 10),
+        sectionCard(
+          title: 'उपनिषद',
+          subtitle: 'ईश • केन • कठ • प्रश्न • मुण्डक और अन्य',
+          icon: Icons.self_improvement_rounded, tint: const Color(0xFF477A68),
+          onTap: () => setState(() => tab = 3),
+        ),
+        heading('भक्ति एवं साधना', 'देवी-देवताओं के पाठ और दैनिक अभ्यास'),
+        sectionCard(
+          title: 'चालीसा और आरती',
+          subtitle: 'देवी-देवता चुनें और उनका पाठ अलग से पढ़ें',
+          icon: Icons.local_fire_department_rounded, tint: const Color(0xFFB65A36),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const BhaktiLibraryPage()),
+          ),
+        ),
+        const SizedBox(height: 10),
+        sectionCard(
+          title: 'मंत्र एवं जाप',
+          subtitle: 'मंत्र संग्रह • जाप काउंटर • दैनिक प्रगति',
+          icon: Icons.spa_rounded, tint: const Color(0xFF34806D),
+          onTap: () => setState(() => tab = 4),
+        ),
+        const SizedBox(height: 10),
+        sectionCard(
+          title: 'ध्यान साधना',
+          subtitle: 'श्वास अभ्यास • एकाग्रता • शांति',
+          icon: Icons.self_improvement, tint: const Color(0xFF647D9C),
+          onTap: () => _showComingSoon('ध्यान साधना'),
+        ),
+        heading('आज की साधना', 'अपनी दैनिक प्रगति जारी रखें'),
+        Card(
+          elevation: 0,
+          color: const Color(0xFFFFF0D7),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+            side: const BorderSide(color: Color(0xFFEBD5B2)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              Container(
+                width: 52, height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE2B5), borderRadius: BorderRadius.circular(17),
+                ),
+                child: const Icon(Icons.spa_rounded, color: Color(0xFF8B4D20), size: 29),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('ॐ नमः शिवाय', style: TextStyle(
+                  fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF633718),
+                )),
+                Text(japLoaded ? '$japCount जाप आज' : 'गिनती लोड हो रही है…',
+                  style: TextStyle(color: Colors.brown.shade500, fontSize: 12)),
+              ])),
+              IconButton(onPressed: () => _changeJap(0), tooltip: 'रीसेट',
+                icon: const Icon(Icons.refresh_rounded)),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF754414), foregroundColor: Colors.white,
+                ),
+                onPressed: japLoaded ? () => _changeJap(japCount + 1) : null,
+                child: const Text('+1'),
+              ),
+            ]),
+          ),
         ),
         const SizedBox(height: 16),
         Card(
-          color: const Color(0xFFFFF0D7),
+          elevation: 0, color: Colors.white,
           child: ListTile(
-            leading: const Icon(Icons.auto_awesome, color: Color(0xFF8B4D20), size: 30),
-            title: const Text('मेरी राशि और अंक ज्योतिष', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF492A17))),
-            subtitle: const Text('जन्मतिथि • जन्म समय • जन्म स्थान • मूलांक • भाग्यांक • मंत्र'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RashiProfilePage())),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Card(
-          color: const Color(0xFFFFF0D7),
-          child: ListTile(
-            leading: const Icon(Icons.local_fire_department, color: Color(0xFF8B4D20), size: 30),
-            title: const Text('चालीसा और आरती संग्रह', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF492A17))),
-            subtitle: const Text('प्रमुख देवी-देवताओं के भक्ति पाठ पढ़ें'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BhaktiLibraryPage())),
-          ),
-        ),
-        const SizedBox(height: 22),
-        Row(children: [
-          const Expanded(child: Text('ज्ञान के प्रमुख विभाग', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF422716)))),
-          Text('LIBRARY', style: TextStyle(color: Colors.brown.shade400, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
-        ]),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: categories.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, crossAxisSpacing: 11, mainAxisSpacing: 11, childAspectRatio: 1.27,
-          ),
-          itemBuilder: (context, index) {
-            final item = categories[index];
-            return Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => setState(() => tab = item['tab'] as int),
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Container(
-                      width: 42, height: 42,
-                      decoration: BoxDecoration(color: const Color(0xFFFFEBCB), borderRadius: BorderRadius.circular(14)),
-                      child: Icon(item['icon'] as IconData, color: const Color(0xFF8B4D20), size: 24),
-                    ),
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(item['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF422716))),
-                      const SizedBox(height: 3),
-                      Text(item['subtitle'] as String, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, height: 1.3, color: Colors.brown.shade500)),
-                    ]),
-                  ]),
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 22),
-        const Text('आज का श्लोक', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF422716))),
-        const SizedBox(height: 10),
-        Card(
-          elevation: 0,
-          color: const Color(0xFFFFF0D7),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFFEBD5B2))),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(children: [
-              const Text('कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।\nमा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥',
-                textAlign: TextAlign.center, style: TextStyle(fontSize: 17, height: 1.8, color: Color(0xFF633718), fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              const Text('श्रीमद्भगवद्गीता 2.47', style: TextStyle(fontSize: 12, color: Colors.brown)),
-              const Divider(height: 22),
-              const Text('अर्थ: तुम्हारा अधिकार कर्म करने में है, उसके फलों में नहीं।', textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
-              TextButton.icon(
-                onPressed: () => _toggleBookmark('gita247'),
-                icon: Icon(bookmarks.contains('gita247') ? Icons.bookmark : Icons.bookmark_border),
-                label: Text(bookmarks.contains('gita247') ? 'बुकमार्क किया गया' : 'श्लोक सहेजें'),
-              ),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 22),
-        Row(children: [
-          const Expanded(child: Text('दैनिक साधना', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF422716)))),
-          const Text('JAPA COUNTER', style: TextStyle(color: Color(0xFF9B744B), fontSize: 10, letterSpacing: 1.2)),
-        ]),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-          child: Row(children: [
-            Container(
-              width: 54, height: 54,
-              decoration: BoxDecoration(color: const Color(0xFFFFEBCB), borderRadius: BorderRadius.circular(17)),
-              child: const Icon(Icons.spa_rounded, color: Color(0xFF8B4D20), size: 30),
-            ),
-            const SizedBox(width: 13),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('ॐ नमः शिवाय', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF633718))),
-              Text(japLoaded ? '$japCount जाप आज' : 'गिनती लोड हो रही है…',
-                style: TextStyle(color: Colors.brown.shade500, fontSize: 12)),
-            ])),
-            IconButton(onPressed: () => _changeJap(0), tooltip: 'रीसेट', icon: const Icon(Icons.refresh)),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF754414), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 15)),
-              onPressed: japLoaded ? () => _changeJap(japCount + 1) : null,
-              child: const Text('+1 जाप'),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 14),
-        Row(children: [
-          Expanded(child: Card(
-            child: ListTile(
-              leading: const Icon(Icons.bookmarks_outlined, color: Color(0xFF8B4D20)),
-              title: const Text('मेरे बुकमार्क', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: Text(bookmarks.length.toString() + ' सहेजी सामग्री', style: const TextStyle(fontSize: 11)),
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => SavedItemsPage(savedGita247: bookmarks.contains('gita247')),
-              )),
-            ),
-          )),
-          Expanded(child: Card(
-            child: ListTile(
-              leading: const Icon(Icons.insights_outlined, color: Color(0xFF8B4D20)),
-              title: const Text('जाप इतिहास', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: const Text('दैनिक प्रगति देखें', style: TextStyle(fontSize: 11)),
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => JapHistoryPage(history: Map<String, int>.from(japHistory)),
-              )),
-            ),
-          )),
-        ]),
-        const SizedBox(height: 18),
-        Card(
-          elevation: 0,
-          color: const Color(0xFF492A17),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 17, vertical: 9),
-            leading: const Icon(Icons.account_balance_rounded, color: Color(0xFFFFD98A), size: 30),
-            title: const Text('महाग्रंथ एवं भारतीय दर्शन', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            subtitle: const Text('रामायण • महाभारत • पुराण • योग • वेदान्त', style: TextStyle(color: Color(0xFFFFE5B5), fontSize: 12)),
-            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFFFFD98A), size: 16),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GranthaLibraryPage())),
+            leading: const Icon(Icons.bookmark_outline, color: Color(0xFF8B4D20)),
+            title: const Text('मेरे सहेजे हुए पाठ'),
+            subtitle: const Text('बुकमार्क और अध्ययन सामग्री'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => SavedItemsPage(savedGita247: bookmarks.contains('gita247')),
+            )),
           ),
         ),
       ],
     );
   }
 
-  Widget _tile(String title, IconData icon, int destination) => InkWell(
-    borderRadius: BorderRadius.circular(18),
-    onTap: () => setState(() => tab = destination),
-    child: Card(child: Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon, color: const Color(0xFFB86B1B), size: 30),
-        const SizedBox(height: 8),
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ]),
-    )),
-  );
+  void _showComingSoon(String section) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(section),
+        content: const Text('इस विभाग की सामग्री अगले अपडेट में चरणबद्ध तरीके से जोड़ी जाएगी।'),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('ठीक है'))],
+      ),
+    );
+  }
 
   Widget _section(String hiTitle, String enTitle, String saTitle,
       String hi, String en, String sa) {
