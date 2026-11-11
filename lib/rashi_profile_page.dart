@@ -30,6 +30,23 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
     ['कुंभ','Aquarius','20 जनवरी – 18 फरवरी','नीलम','भगवान शिव / शनिदेव','ॐ नमः शिवाय'],
     ['मीन','Pisces','19 फरवरी – 20 मार्च','पुखराज','भगवान विष्णु','ॐ नमो भगवते वासुदेवाय'],
   ];
+  // Traditional gemstone associations by Vedic Moon sign. These are cultural
+  // correspondences, not personalized prescriptions; suitability needs a full
+  // chart review and should never be inferred from Moon sign alone.
+  static const vedicMoonRashiGems = <String, String>{
+    'मेष': 'मूंगा',
+    'वृषभ': 'हीरा / ओपल',
+    'मिथुन': 'पन्ना',
+    'कर्क': 'मोती',
+    'सिंह': 'माणिक',
+    'कन्या': 'पन्ना',
+    'तुला': 'हीरा / ओपल',
+    'वृश्चिक': 'मूंगा',
+    'धनु': 'पुखराज',
+    'मकर': 'नीलम',
+    'कुंभ': 'नीलम',
+    'मीन': 'पुखराज',
+  };
   static const numberGuides = {
     1:['सूर्य देव','ॐ घृणिः सूर्याय नमः'], 2:['भगवान शिव','ॐ नमः शिवाय'],
     3:['भगवान विष्णु / बृहस्पति','ॐ बृं बृहस्पतये नमः'], 4:['माँ दुर्गा','ॐ दुं दुर्गायै नमः'],
@@ -152,13 +169,15 @@ class _RashiProfilePageState extends State<RashiProfilePage> {
       if(d==null) const Text('पहले जन्मतिथि, समय और जन्म स्थान भरें।',style:TextStyle(color:Colors.brown)) else ...[
         _card('अंक ज्योतिष के अनुसार आपका मूलांक: '+mul.toString(),[const Text('जन्म के दिन के अंकों को जोड़कर मूलांक निकाला जाता है.'),_line('पारंपरिक आराध्य देव',mg![0]),_line('मंत्र',mg[1])]),
         _card('अंक ज्योतिष के अनुसार आपका भाग्यांक: '+bhag.toString(),[const Text('पूरी जन्मतिथि के अंकों को जोड़कर भाग्यांक निकाला जाता है.'),_line('पारंपरिक आराध्य देव',bg![0]),_line('मंत्र',bg[1])]),
-        _card('जन्मतिथि आधारित पश्चिमी सूर्य-राशि संकेत: '+sign![0]+' ('+sign[1]+')',[_line('तारीख सीमा',sign[2]),_line('पारंपरिक आराध्य देव',sign[4]),_line('मंत्र',sign[5]),_line('परंपरागत रत्न-संबंध',sign[3])]),
+        _card('जन्मतिथि आधारित पश्चिमी सूर्य-राशि संकेत: '+sign![0]+' ('+sign[1]+')',[_line('तारीख सीमा',sign[2]),_line('पारंपरिक आराध्य देव',sign[4]),_line('मंत्र',sign[5]),_line('पश्चिमी सूर्य-राशि से जुड़ा लोकप्रिय रत्न (वैदिक सलाह नहीं)',sign[3])]),
         if (vedicMoon != null)
           _card('वैदिक चंद्र राशि • लाहिरी (mean)', [
             _line('जन्म चंद्र राशि', vedicMoon.rashi),
             _line('जन्म नक्षत्र', vedicMoon.nakshatra),
             _line('नक्षत्र चरण', vedicMoon.nakshatraPada.toString()),
             _line('निरयण चंद्र longitude', vedicMoon.siderealLongitude.toStringAsFixed(4)+'°'),
+            _line('इस चंद्र राशि से जुड़ा पारंपरिक रत्न', vedicMoonRashiGems[vedicMoon.rashi] ?? 'उपलब्ध नहीं'),
+            const Text('रत्न संबंध केवल पारंपरिक राशि-आधारित जानकारी है, व्यक्तिगत पहनने की सलाह नहीं। रत्न चुनने से पहले पूरी जन्म-कुंडली, ग्रह-स्वामित्व और दशा का योग्य ज्योतिषी से परीक्षण कराएँ।',style:TextStyle(fontSize:12,height:1.5,color:Colors.brown)),
             const Text('गणना नोट: यह Meeus-आधारित चंद्र स्थिति और लाहिरी mean अयनांश के प्रारंभिक मॉडल पर आधारित है। Nutation correction और स्वतंत्र पंचांग cross-validation अभी बाकी है; राशि-सीमा के निकट परिणाम को अंतिम कुंडली न मानें.',style:TextStyle(fontSize:12,height:1.5,color:Colors.brown)),
           ])
         else
