@@ -14,16 +14,19 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: MeditationPage()));
 
     expect(find.text('05:00'), findsOneWidget);
+    await tester.ensureVisible(find.text('शुरू करें'));
     await tester.tap(find.text('शुरू करें'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('04:58'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('रोकें'));
     await tester.tap(find.text('रोकें'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('04:58'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('रीसेट'));
     await tester.tap(find.text('रीसेट'));
     await tester.pump();
     expect(find.text('05:00'), findsOneWidget);
