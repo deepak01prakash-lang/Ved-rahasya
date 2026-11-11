@@ -32,6 +32,20 @@ void main() {
       }
     });
 
+    test('all configured Parashari Vargas map into twelve signs', () {
+      final chart = engine.calculate(
+        birthUtc: DateTime.utc(2000, 1, 1, 12),
+        latitude: 28.6,
+        longitudeEast: 77.2,
+      );
+      const divisions = [1, 2, 3, 4, 7, 9, 10, 12, 16, 20, 24, 27, 30, 40, 45, 60];
+      for (final division in divisions) {
+        for (var longitude = 0.0; longitude < 360; longitude += 0.1) {
+          expect(chart.divisionalSign(longitude, division), inInclusiveRange(0, 11));
+        }
+      }
+    });
+
     test('Vimshottari balance and antardasha periods are ordered', () {
       final timeline = VimshottariTimeline.fromMoonLongitude(
         10,
