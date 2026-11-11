@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'rashi_profile_page.dart';
+import 'bhakti_library_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -269,6 +270,17 @@ class _HomeScreenState extends State<HomeScreen> {
             subtitle: const Text('जन्मतिथि • जन्म समय • जन्म स्थान • मूलांक • भाग्यांक • मंत्र'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RashiProfilePage())),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          color: const Color(0xFFFFF0D7),
+          child: ListTile(
+            leading: const Icon(Icons.local_fire_department, color: Color(0xFF8B4D20), size: 30),
+            title: const Text('चालीसा और आरती संग्रह', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF492A17))),
+            subtitle: const Text('प्रमुख देवी-देवताओं के भक्ति पाठ पढ़ें'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BhaktiLibraryPage())),
           ),
         ),
         const SizedBox(height: 22),
