@@ -46,6 +46,86 @@ class VedicKundli {
     return grahas.where((g) => g.rashiIndex == rashi).toList();
   }
 
+  /// Traditional Parashari divisional sign mapping for commonly used Vargas.
+  /// D30 uses the unequal Trimsamsa spans; other supported Vargas use equal parts.
+  int divisionalSign(double longitude, int division) {
+    if (division == 9) return navamshaSign(longitude);
+    if (![2, 3, 4, 7, 10, 12, 16, 20, 24, 27, 30, 40, 45, 60].contains(division)) {
+      if (division == 1) return (longitude / 30).floor() % 12;
+      throw ArgumentError.value(division, 'division', 'Unsupported Varga');
+    }
+    final sign = (longitude / 30).floor() % 12;
+    final degree = longitude % 30;
+    if (division == 2) {
+      final firstHalf = degree < 15;
+      if (sign.isEven) return firstHalf ? 4 : 3;
+      return firstHalf ? 3 : 4;
+    }
+    if (division == 30) {
+      if (sign.isEven) {
+        if (degree < 5) return 0;
+        if (degree < 10) return 10;
+        if (degree < 18) return 8;
+        if (degree < 25) return 2;
+        return 6;
+      }
+      if (degree < 5) return 1;
+      if (degree < 12) return 5;
+      if (degree < 20) return 11;
+      if (degree < 25) return 9;
+      return 7;
+    }
+
+    final part = (degree / (30 / division)).floor().clamp(0, division - 1).toInt();
+    int start;
+    switch (division) {
+      case 3:
+        start = sign;
+        break;
+      case 4:
+        start = sign;
+        break;
+      case 7:
+        start = sign.isEven ? sign : (sign + 6) % 12;
+        break;
+      case 10:
+        start = sign.isEven ? sign : (sign + 8) % 12;
+        break;
+      case 12:
+        start = sign;
+        break;
+      case 16:
+        start = [0, 4, 8][sign % 3];
+        break;
+      case 20:
+        start = [0, 8, 4][sign % 3];
+        break;
+      case 24:
+        start = sign.isEven ? 4 : 3;
+        break;
+      case 27:
+        start = [0, 3, 6][sign % 3];
+        break;
+      case 40:
+        start = sign.isEven ? 0 : 6;
+        break;
+      case 45:
+        start = [0, 4, 8][sign % 3];
+        break;
+      case 60:
+        start = sign.isEven ? 0 : 6;
+        break;
+      default:
+        throw ArgumentError.value(division, 'division');
+    }
+    final step = switch (division) {
+      3 => 4,
+      4 => 3,
+      _ => 1,
+    };
+    return (start + part * step) % 12;
+  }
+
   /// Navamsha (D9) sign index using the movable/fixed/dual sign rule.
   int navamshaSign(double siderealLongitude) {
     final sign = (siderealLongitude / 30).floor() % 12;
