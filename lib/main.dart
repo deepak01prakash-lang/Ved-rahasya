@@ -593,18 +593,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Card(
-          elevation: 0, color: Colors.white,
-          child: ListTile(
-            leading: const Icon(Icons.bookmark_outline, color: Color(0xFF8B4D20)),
-            title: const Text('मेरे सहेजे हुए पाठ'),
-            subtitle: const Text('बुकमार्क और अध्ययन सामग्री'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => SavedItemsPage(savedGita247: bookmarks.contains('gita247')),
-            )),
-          ),
-        ),
       ],
     );
   }
