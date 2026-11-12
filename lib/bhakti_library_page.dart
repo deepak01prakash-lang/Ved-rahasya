@@ -423,32 +423,95 @@ class _BhaktiLibraryPageState extends State<BhaktiLibraryPage> {
   }
 }
 
-class BhaktiReaderPage extends StatelessWidget {
+class BhaktiReaderPage extends StatefulWidget {
   const BhaktiReaderPage({super.key, required this.item});
   final BhaktiText item;
 
   @override
+  State<BhaktiReaderPage> createState() => _BhaktiReaderPageState();
+}
+
+class _BhaktiReaderPageState extends State<BhaktiReaderPage> {
+  double _fontSize = 18;
+
+  Future<void> _copyText() async {
+    await Clipboard.setData(ClipboardData(text: widget.item.content));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('पाठ कॉपी हो गया।')),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     return Scaffold(
-      appBar: AppBar(title: Text(item.title)),
+      appBar: AppBar(
+        title: Text(item.title),
+        actions: [
+          IconButton(
+            tooltip: 'पाठ कॉपी करें',
+            onPressed: _copyText,
+            icon: const Icon(Icons.copy),
+          ),
+          PopupMenuButton<double>(
+            tooltip: 'अक्षर का आकार',
+            icon: const Icon(Icons.text_fields),
+            onSelected: (value) => setState(() => _fontSize = value),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 16, child: Text('छोटा अक्षर')),
+              PopupMenuItem(value: 18, child: Text('सामान्य अक्षर')),
+              PopupMenuItem(value: 22, child: Text('बड़ा अक्षर')),
+              PopupMenuItem(value: 26, child: Text('बहुत बड़ा अक्षर')),
+            ],
+          ),
+        ],
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
-          Text(item.deity,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF754414))),
+          Text(
+            item.deity,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF754414),
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(item.kind, textAlign: TextAlign.center, style: TextStyle(color: Colors.brown.shade500)),
+          Text(
+            item.kind,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.brown.shade500),
+          ),
           if (item.source != null) ...[
             const SizedBox(height: 8),
-            Text(item.source!, textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, height: 1.4, color: Colors.brown)),
+            Text(
+              item.source!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.4,
+                color: Colors.brown,
+              ),
+            ),
           ],
           const Divider(height: 28),
           SelectableText(
             item.content,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18, height: 2, color: Color(0xFF382012)),
+            style: TextStyle(
+              fontSize: _fontSize,
+              height: 2,
+              color: const Color(0xFF382012),
+            ),
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: _copyText,
+            icon: const Icon(Icons.copy_all),
+            label: const Text('पूरा पाठ कॉपी करें'),
           ),
         ],
       ),
