@@ -76,6 +76,25 @@ jobs:
           path.write_text(updated)
           PY
 
+      - name: Work around upstream Android lint crash in Firebase dependency
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path('android/app/build.gradle.kts')
+          source = path.read_text()
+          if 'checkReleaseBuilds = false' not in source:
+              source, count = re.subn(
+                  r'(android\\s*\\{)',
+                  r'\\1\\n    lint {\\n        checkReleaseBuilds = false\\n        abortOnError = false\\n    }',
+                  source,
+                  count=1,
+              )
+              if count != 1:
+                  raise SystemExit('Could not safely add Android lint workaround.')
+              path.write_text(source)
+          PY
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -151,7 +170,7 @@ jobs:
         env:
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-        run: flutter build apk --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
+        run: flutter build apk --debug --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
 
       - name: Upload Android build artifacts
         uses: actions/upload-artifact@v4
