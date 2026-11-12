@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "default_reading_languages": ["sa", "hi", "en"],
+  "translation_policy": {
+    "source_of_truth": "verified_sanskrit_mula",
+    "hindi": "new_ai_assisted_translation_from_sanskrit; human_review_required",
+    "english": "new_ai_assisted_translation_from_sanskrit; human_review_required",
+    "never_copy": "modern copyrighted translations, commentaries, or publisher editorial matter",
+    "rights_note": "Ancient source works may be public domain, but a particular digital transcription, critical edition, apparatus, translation, or commentary can carry separate licence terms. AI-generated translations are not automatically guaranteed copyright-free."
+  },
+  "collections": [
+    {"id":"rigveda","title_sa":"ऋग्वेदः","title_hi":"ऋग्वेद","title_en":"Rigveda","group":"वेद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"yajurveda","title_sa":"यजुर्वेदः","title_hi":"यजुर्वेद","title_en":"Yajurveda","group":"वेद","text_status":"not_imported","source_status":"edition_and_licence_review_required","note":"शुक्ल और कृष्ण यजुर्वेद की शाखाएँ अलग-अलग दर्ज होंगी।"},
+    {"id":"samaveda","title_sa":"सामवेदः","title_hi":"सामवेद","title_en":"Samaveda","group":"वेद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"atharvaveda","title_sa":"अथर्ववेदः","title_hi":"अथर्ववेद","title_en":"Atharvaveda","group":"वेद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"isha-upanishad","title_sa":"ईशोपनिषत्","title_hi":"ईश उपनिषद","title_en":"Isha Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"kena-upanishad","title_sa":"केनोपनिषत्","title_hi":"केन उपनिषद","title_en":"Kena Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"katha-upanishad","title_sa":"कठोपनिषत्","title_hi":"कठ उपनिषद","title_en":"Katha Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"prashna-upanishad","title_sa":"प्रश्नोपनिषत्","title_hi":"प्रश्न उपनिषद","title_en":"Prashna Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"mundaka-upanishad","title_sa":"मुण्डकोपनिषत्","title_hi":"मुण्डक उपनिषद","title_en":"Mundaka Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"mandukya-upanishad","title_sa":"माण्डूक्योपनिषत्","title_hi":"माण्डूक्य उपनिषद","title_en":"Mandukya Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"taittiriya-upanishad","title_sa":"तैत्तिरीयोपनिषत्","title_hi":"तैत्तिरीय उपनिषद","title_en":"Taittiriya Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"aitareya-upanishad","title_sa":"ऐतरेयोपनिषत्","title_hi":"ऐतरेय उपनिषद","title_en":"Aitareya Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"chandogya-upanishad","title_sa":"छान्दोग्योपनिषत्","title_hi":"छान्दोग्य उपनिषद","title_en":"Chandogya Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"brihadaranyaka-upanishad","title_sa":"बृहदारण्यकोपनिषत्","title_hi":"बृहदारण्यक उपनिषद","title_en":"Brihadaranyaka Upanishad","group":"उपनिषद","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"bhagavad-gita","title_sa":"श्रीमद्भगवद्गीता","title_hi":"श्रीमद्भगवद्गीता","title_en":"Bhagavad Gita","group":"गीता","text_status":"existing_sanskrit_dataset_present_review_completeness","source":"gita/gita","licence":"Unlicense","note":"मौजूदा assets/data/gita_verses.json की 18 अध्याय/700 श्लोक पूर्णता और पाठभेद का सत्यापन आवश्यक।"},
+    {"id":"bhagavata-purana","title_sa":"श्रीमद्भागवतपुराणम्","title_hi":"श्रीमद्भागवत महापुराण","title_en":"Srimad Bhagavata Purana","group":"पुराण","text_status":"not_imported","source_status":"edition_and_licence_review_required","note":"12 स्कन्धों का पूर्ण पाठ; स्कन्ध/अध्याय/श्लोक क्रम सहित।"},
+    {"id":"valmiki-ramayana","title_sa":"वाल्मीकिरामायणम्","title_hi":"वाल्मीकि रामायण","title_en":"Valmiki Ramayana","group":"इतिहास","text_status":"not_imported","source_status":"edition_and_licence_review_required"},
+    {"id":"mahabharata","title_sa":"महाभारतम्","title_hi":"महाभारत","title_en":"Mahabharata","group":"इतिहास","text_status":"not_imported","source_status":"edition_and_licence_review_required","note":"चुने हुए संस्करण और उसके अधिकार स्पष्ट किए बिना किसी आधुनिक critical edition को mirror न करें।"}
+  ],
+  "record_requirements": ["work_id","edition_title","source_url","licence_name","licence_url","attribution","recension_or_shakha","structure_path","verse_number","sanskrit_text","text_verified","hindi_translation","hindi_review_status","english_translation","english_review_status"]
+}
