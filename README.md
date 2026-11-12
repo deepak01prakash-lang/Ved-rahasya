@@ -41,3 +41,9 @@ Firebase Email/Password authentication is implemented as an optional account scr
 
 ## Repository workflow
 GitHub Actions: https://github.com/deepak01prakash-lang/Ved-rahasya/actions
+
+## Scripture corpus and translations
+- The scripture corpus plan and per-work rights checklist are in [SCRIPTURE_CORPUS_POLICY.md](docs/SCRIPTURE_CORPUS_POLICY.md).
+- The structured work manifest is bundled at `assets/data/scripture_catalog.json`. Catalogue entries explicitly distinguish planned texts from imported/verified complete texts.
+- Planned reader languages are Sanskrit original, newly prepared Hindi translation, and newly prepared English translation. Translations must be made from the verified Sanskrit source and human-reviewed; AI output is not automatically copyright-free.
+- Each edition must pass source/licence review before bundling. Non-commercial-only corpora must not be used in a monetized app without permission.
