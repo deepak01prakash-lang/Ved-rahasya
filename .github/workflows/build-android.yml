@@ -80,18 +80,17 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           path = Path('android/app/build.gradle.kts')
           source = path.read_text()
           if 'checkReleaseBuilds = false' not in source:
-              source, count = re.subn(
-                  r'(android\\s*\\{)',
-                  r'\\1\\n    lint {\\n        checkReleaseBuilds = false\\n        abortOnError = false\\n    }',
-                  source,
-                  count=1,
+              marker = 'android {'
+              if marker not in source:
+                  raise SystemExit('Could not find generated Android configuration block.')
+              source = source.replace(
+                  marker,
+                  marker + '\\n    lint {\\n        checkReleaseBuilds = false\\n        abortOnError = false\\n    }',
+                  1,
               )
-              if count != 1:
-                  raise SystemExit('Could not safely add Android lint workaround.')
               path.write_text(source)
           PY
 
