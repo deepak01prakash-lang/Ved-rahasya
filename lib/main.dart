@@ -608,6 +608,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
 
 class DharmaSearchPage extends StatefulWidget {
   const DharmaSearchPage({super.key});
