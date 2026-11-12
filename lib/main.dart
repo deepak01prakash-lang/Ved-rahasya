@@ -12,6 +12,7 @@ import 'panchang_page.dart';
 import 'meditation_page.dart';
 import 'account_page.dart';
 import 'firebase_config.dart';
+import 'scripture_catalog_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -926,6 +927,22 @@ class _GranthaLibraryPageState extends State<GranthaLibraryPage> {
           const Text('सनातन साहित्य का विस्तृत परिचय', style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold, color: Color(0xFF754414))),
           const SizedBox(height: 8),
           const Text('महाकाव्य, पुराण और दर्शन को उनके मूल संदर्भ, पाठ-परंपरा और अलग-अलग व्याख्याओं के साथ पढ़ें।', style: TextStyle(fontSize: 15, height: 1.6)),
+          const SizedBox(height: 14),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.library_books_rounded, color: Color(0xFFB86B1B)),
+              title: const Text('मूल ग्रंथ-संग्रह और उपलब्धता'),
+              subtitle: const Text('वेद • उपनिषद • गीता • पुराण • रामायण • महाभारत'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => ScriptureCatalogPage(
+                  onOpenGita: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const GitaLibraryPage(),
+                  )),
+                ),
+              )),
+            ),
+          ),
           const SizedBox(height: 14),
           TextField(
             onChanged: (value) => setState(() => searchQuery = value),
