@@ -547,6 +547,15 @@ class _HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(builder: (_) => const DevotionalMediaPage(kind: DevotionalMediaKind.meditation)),
           ),
         ),
+        const SizedBox(height: 10),
+        sectionCard(
+          title: 'श्वास अभ्यास टाइमर',
+          subtitle: '5–20 मिनट • श्वास चक्र • दैनिक अभ्यास',
+          icon: Icons.air_rounded, tint: const Color(0xFF56806D),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const MeditationPage()),
+          ),
+        ),
         heading('आज की साधना', 'अपनी दैनिक प्रगति जारी रखें'),
         Card(
           elevation: 0,
