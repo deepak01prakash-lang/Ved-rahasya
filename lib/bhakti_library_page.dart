@@ -444,7 +444,7 @@ class _BhaktiReaderPageState extends State<BhaktiReaderPage> {
     _tts.setCompletionHandler(() {
       if (mounted) setState(() => _speaking = false);
     });
-    _tts.setCancelHandler((_) {
+    _tts.setCancelHandler(() {
       if (mounted) setState(() => _speaking = false);
     });
     _tts.setErrorHandler((_) {
