@@ -544,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: 'श्वास अभ्यास • एकाग्रता • मौलिक ध्यान ध्वनियाँ',
           icon: Icons.self_improvement, tint: const Color(0xFF647D9C),
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const MeditationPage()),
+            MaterialPageRoute(builder: (_) => const DevotionalMediaPage(kind: DevotionalMediaKind.meditation)),
           ),
         ),
         heading('आज की साधना', 'अपनी दैनिक प्रगति जारी रखें'),
