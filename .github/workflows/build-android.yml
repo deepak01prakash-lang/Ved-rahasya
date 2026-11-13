@@ -54,6 +54,32 @@ jobs:
                   frames.extend(struct.pack('<h', sample))
               out.writeframes(frames)
           PY
+          python3 - <<'PY'
+          import math, struct, wave
+          from pathlib import Path
+          rate = 22050
+          Path('assets/audio').mkdir(parents=True, exist_ok=True)
+          def write_tone(name, duration, notes, harmonics=(1.0, 0.25, 0.08), volume=0.12):
+              with wave.open(f'assets/audio/{name}.wav', 'wb') as out:
+                  out.setnchannels(1); out.setsampwidth(2); out.setframerate(rate)
+                  frames = bytearray()
+                  for i in range(int(rate * duration)):
+                      t = i / rate
+                      slot_len = duration / len(notes)
+                      slot = min(int(t / slot_len), len(notes)-1)
+                      local = t - slot * slot_len
+                      fade = min(1.0, local / 0.06, (slot_len-local) / 0.12, (duration-t) / 0.3)
+                      freq = notes[slot]
+                      tone = sum(h * math.sin(2*math.pi*freq*(j+1)*t) for j,h in enumerate(harmonics))
+                      sample = int(32767 * volume * max(0.0, fade) * tone / sum(harmonics))
+                      frames.extend(struct.pack('<h', sample))
+                  out.writeframes(frames)
+          write_tone('temple_bell', 20, [660, 784, 880, 784, 660, 988, 880, 784], (1,.55,.25,.12), .18)
+          write_tone('conch_tone', 20, [196, 220, 247, 220, 196], (1,.35,.12), .16)
+          write_tone('devotional_tune', 20, [392,440,494,523,494,440,392,330], (1,.25,.08), .14)
+          write_tone('meditation_calm', 60, [130.81,164.81,196.00], (1,.22,.06), .09)
+          write_tone('meditation_focus', 60, [110.00,146.83,174.61], (1,.18,.05), .08)
+          PY
 
       - name: Generate Android project
         run: flutter create --platforms=android --project-name ved_rahasya --org com.vedrahasya .
