@@ -12,6 +12,7 @@ import 'panchang_page.dart';
 import 'meditation_page.dart';
 import 'account_page.dart';
 import 'firebase_config.dart';
+import 'devotional_media_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -506,11 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: 'HD भक्ति वॉलपेपर • डाउनलोड और शेयर',
           icon: Icons.wallpaper_rounded, tint: const Color(0xFF9B5B25),
           onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const MediaComingSoonPage(
-              title: 'भगवान के वॉलपेपर',
-              description: 'शिव, श्रीराम, श्रीकृष्ण, हनुमानजी, माता रानी और अन्य देवी-देवताओं के HD वॉलपेपर यहाँ उपलब्ध होंगे।',
-              icon: Icons.wallpaper_rounded,
-            ),
+            builder: (_) => const DevotionalMediaPage(kind: DevotionalMediaKind.wallpapers),
           )),
         ),
         const SizedBox(height: 10),
@@ -519,11 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: 'मंत्र • शंख • मंदिर की घंटी • भक्ति धुन',
           icon: Icons.notifications_active_rounded, tint: const Color(0xFFB47724),
           onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const MediaComingSoonPage(
-              title: 'भक्ति रिंगटोन',
-              description: 'मंत्र, शंख, मंदिर की घंटी और छोटी भक्ति धुनों की रिंगटोन यहाँ जोड़ी जाएँगी।',
-              icon: Icons.notifications_active_rounded,
-            ),
+            builder: (_) => const DevotionalMediaPage(kind: DevotionalMediaKind.ringtones),
           )),
         ),
         const SizedBox(height: 10),
@@ -548,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 10),
         sectionCard(
           title: 'ध्यान साधना',
-          subtitle: 'श्वास अभ्यास • एकाग्रता • ध्यान संगीत जल्द उपलब्ध',
+          subtitle: 'श्वास अभ्यास • एकाग्रता • मौलिक ध्यान ध्वनियाँ',
           icon: Icons.self_improvement, tint: const Color(0xFF647D9C),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const MeditationPage()),
