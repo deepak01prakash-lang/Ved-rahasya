@@ -84,6 +84,145 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --project-name ved_rahasya --org com.vedrahasya .
 
+      - name: Configure Android ringtone picker bridge
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          main_activity = next(Path('android/app/src/main/kotlin').rglob('MainActivity.kt'))
+          source = main_activity.read_text()
+          package = re.search(r'^package\s+([\w.]+)', source, re.M).group(1)
+          kotlin = """package __PACKAGE__
+
+          import android.content.ContentValues
+          import android.content.Intent
+          import android.media.RingtoneManager
+          import android.net.Uri
+          import android.os.Build
+          import android.os.Bundle
+          import android.os.Environment
+          import android.provider.MediaStore
+          import android.provider.Settings
+          import io.flutter.embedding.android.FlutterActivity
+          import io.flutter.embedding.engine.FlutterEngine
+          import io.flutter.FlutterInjector
+          import io.flutter.plugin.common.MethodChannel
+
+          class MainActivity : FlutterActivity() {
+              private val channelName = "com.vedrahasya/media"
+              private var pendingUri: Uri? = null
+              private var pendingTitle = "Ved Rahasya"
+              private var pendingResult: MethodChannel.Result? = null
+
+              override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+                  super.configureFlutterEngine(flutterEngine)
+                  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
+                      .setMethodCallHandler { call, result ->
+                          if (call.method != "setRingtoneFromAsset") {
+                              result.notImplemented()
+                              return@setMethodCallHandler
+                          }
+                          if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                              result.error("UNSUPPORTED_ANDROID", "रिंगटोन सेट करने के लिए Android 10 या नया संस्करण चाहिए। फ़ाइल शेयर करके फोन की Sound Settings से चुनें।", null)
+                              return@setMethodCallHandler
+                          }
+                          val assetPath = call.argument<String>("assetPath")
+                          val title = call.argument<String>("title") ?: "Ved Rahasya"
+                          if (assetPath.isNullOrBlank()) {
+                              result.error("INVALID_ASSET", "ऑडियो फ़ाइल नहीं मिली।", null)
+                              return@setMethodCallHandler
+                          }
+                          try {
+                              val assetKey = FlutterInjector.instance().flutterLoader().getLookupKeyForAsset(assetPath)
+                              val values = ContentValues().apply {
+                                  put(MediaStore.Audio.Media.DISPLAY_NAME, "$title.wav")
+                                  put(MediaStore.Audio.Media.TITLE, title)
+                                  put(MediaStore.Audio.Media.MIME_TYPE, "audio/wav")
+                                  put(MediaStore.Audio.Media.IS_RINGTONE, 1)
+                                  put(MediaStore.Audio.Media.IS_NOTIFICATION, 1)
+                                  put(MediaStore.Audio.Media.IS_ALARM, 0)
+                                  put(MediaStore.Audio.Media.RELATIVE_PATH, Environment.DIRECTORY_RINGTONES + "/Ved Rahasya")
+                              }
+                              val uri = contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+                                  ?: throw IllegalStateException("फोन में रिंगटोन फ़ाइल सेव नहीं हो पाई।")
+                              contentResolver.openOutputStream(uri)?.use { output ->
+                                  assets.open(assetKey).use { input -> input.copyTo(output) }
+                              } ?: throw IllegalStateException("रिंगटोन फ़ाइल लिखी नहीं जा सकी।")
+                              pendingUri = uri
+                              pendingTitle = title
+                              pendingResult = result
+                              if (Settings.System.canWrite(this)) {
+                                  openRingtonePicker()
+                              } else {
+                                  val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:$packageName"))
+                                  startActivityForResult(intent, 901)
+                              }
+                          } catch (error: Exception) {
+                              pendingResult = null
+                              result.error("RINGTONE_SAVE_FAILED", error.message ?: "रिंगटोन सेव नहीं हो पाई।", null)
+                          }
+                      }
+              }
+
+              private fun openRingtonePicker() {
+                  val uri = pendingUri ?: return
+                  val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                      putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
+                      putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "$pendingTitle को रिंगटोन चुनें")
+                      putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, uri)
+                      putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                      putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                  }
+                  startActivityForResult(intent, 902)
+              }
+
+              @Suppress("DEPRECATION")
+              override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+                  super.onActivityResult(requestCode, resultCode, data)
+                  if (requestCode == 901) {
+                      if (Settings.System.canWrite(this)) {
+                          openRingtonePicker()
+                      } else {
+                          pendingResult?.error("WRITE_SETTINGS_DENIED", "रिंगटोन बदलने की सिस्टम अनुमति नहीं मिली।", null)
+                          clearPending()
+                      }
+                  } else if (requestCode == 902) {
+                      val selected = if (Build.VERSION.SDK_INT >= 33) {
+                          data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+                      } else {
+                          data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+                      }
+                      if (resultCode == RESULT_OK && selected != null) {
+                          try {
+                              RingtoneManager.setActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE, selected)
+                              pendingResult?.success(true)
+                          } catch (error: Exception) {
+                              pendingResult?.error("RINGTONE_SET_FAILED", error.message ?: "डिफ़ॉल्ट रिंगटोन सेट नहीं हो पाई।", null)
+                          }
+                      } else {
+                          pendingResult?.success(false)
+                      }
+                      clearPending()
+                  }
+              }
+
+              private fun clearPending() {
+                  pendingUri = null
+                  pendingResult = null
+                  pendingTitle = "Ved Rahasya"
+              }
+          }
+          """.replace("__PACKAGE__", package)
+          main_activity.write_text(kotlin)
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          xml = manifest.read_text()
+          if 'android.permission.WRITE_SETTINGS' not in xml:
+              xml = xml.replace('    <application', '    <uses-permission android:name="android.permission.WRITE_SETTINGS" />\n    <application', 1)
+          if 'android.intent.action.TTS_SERVICE' not in xml:
+              xml = re.sub(r'(<manifest[^>]*>)', r'\1\n    <queries>\n        <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>\n    </queries>', xml, count=1)
+          manifest.write_text(xml)
+          PY
+
       - name: Set Android minimum SDK for Firebase Authentication
         run: |
           python3 - <<'PY'
