@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter/services.dart';
 
 class BhaktiText {
@@ -434,6 +435,47 @@ class BhaktiReaderPage extends StatefulWidget {
 
 class _BhaktiReaderPageState extends State<BhaktiReaderPage> {
   double _fontSize = 18;
+  final FlutterTts _tts = FlutterTts();
+  bool _speaking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _speaking = false);
+    });
+    _tts.setCancelHandler((_) {
+      if (mounted) setState(() => _speaking = false);
+    });
+    _tts.setErrorHandler((_) {
+      if (mounted) setState(() => _speaking = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tts.stop();
+    super.dispose();
+  }
+
+  Future<void> _speakText() async {
+    try {
+      await _tts.setLanguage('hi-IN');
+      await _tts.setSpeechRate(0.43);
+      await _tts.setPitch(1.0);
+      await _tts.speak(widget.item.content);
+      if (mounted) setState(() => _speaking = true);
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('हिंदी आवाज़ उपलब्ध नहीं है। फोन की Text-to-speech सेटिंग जाँचें।')),
+      );
+    }
+  }
+
+  Future<void> _stopSpeech() async {
+    await _tts.stop();
+    if (mounted) setState(() => _speaking = false);
+  }
 
   Future<void> _copyText() async {
     await Clipboard.setData(ClipboardData(text: widget.item.content));
@@ -471,6 +513,23 @@ class _BhaktiReaderPageState extends State<BhaktiReaderPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: _speaking ? null : _speakText,
+                icon: const Icon(Icons.volume_up_rounded),
+                label: const Text('पाठ सुनें'),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                onPressed: _speaking ? _stopSpeech : null,
+                icon: const Icon(Icons.stop_rounded),
+                label: const Text('रोकें'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
           Text(
             item.deity,
             textAlign: TextAlign.center,
@@ -508,6 +567,8 @@ class _BhaktiReaderPageState extends State<BhaktiReaderPage> {
               color: const Color(0xFF382012),
             ),
           ),
+          const SizedBox(height: 10),
+          const Text('ऑडियो फोन की हिंदी Text-to-Speech आवाज़ से पढ़ा जाता है; यह गायक द्वारा रिकॉर्ड की गई आरती नहीं है।', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.brown)),
           const SizedBox(height: 20),
           OutlinedButton.icon(
             onPressed: _copyText,
