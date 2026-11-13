@@ -27,3 +27,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/audio/ved_rahasya_theme.wav
+    - assets/audio/temple_bell.wav
+    - assets/audio/conch_tone.wav
+    - assets/audio/devotional_tune.wav
+    - assets/audio/meditation_calm.wav
+    - assets/audio/meditation_focus.wav
