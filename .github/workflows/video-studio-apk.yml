@@ -1,0 +1,42 @@
+name: Personal Video Studio Android APK
+
+on:
+  push:
+    branches: [main, build/free-video-studio]
+    paths:
+      - 'video_studio/**'
+      - '.github/workflows/video-studio-apk.yml'
+  pull_request:
+    paths:
+      - 'video_studio/**'
+      - '.github/workflows/video-studio-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: video_studio
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Generate Android platform
+        run: flutter create --platforms=android --project-name ved_rahasya_video_studio --org com.vedrahasya .
+      - name: Get dependencies
+        run: flutter pub get
+      - name: Remove generated template test
+        run: rm -f test/widget_test.dart
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+      - name: Build debug APK
+        run: flutter build apk --debug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ved-rahasya-video-studio-debug-apk
+          path: video_studio/build/app/outputs/flutter-apk/app-debug.apk
