@@ -311,7 +311,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
                           ),
                           if (showChakra) CustomPaint(painter: _VastuGridPainter()),
                           if (boundaryCorners.isNotEmpty)
-                            CustomPaint(painter: _BoundaryPainter(corners: boundaryCorners)),
+                            CustomPaint(painter: _BoundaryPainter(corners: List<Offset>.of(boundaryCorners))),
                           for (var i = 0; i < boundaryCorners.length; i++)
                             Positioned(
                               left: boundaryCorners[i].dx * width - 12,
@@ -396,7 +396,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
               style: const TextStyle(fontSize: 11, color: Colors.brown),
             ),
             Text(
-              'Centre: ' + (planCentre == null ? 'चारों कोने मार्क करें' : (planCentre!.dx * 100).toStringAsFixed(1) + '% X, ' + (planCentre!.dy * 100).toStringAsFixed(1) + '% Y  •  Diagonal intersection'),
+              'Centre: ' + (planCentre == null ? (boundaryCorners.length == 4 ? 'Diagonals का intersection नहीं मिला—चारों कोने क्रम से दोबारा चुनें' : 'चारों कोने मार्क करें') : (planCentre!.dx * 100).toStringAsFixed(1) + '% X, ' + (planCentre!.dy * 100).toStringAsFixed(1) + '% Y  •  Diagonal intersection'),
               style: const TextStyle(fontSize: 11, color: Colors.brown, fontWeight: FontWeight.w600),
             ),
             Wrap(
