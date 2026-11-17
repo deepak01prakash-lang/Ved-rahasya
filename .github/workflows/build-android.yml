@@ -84,6 +84,31 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --project-name ved_rahasya --org com.vedrahasya .
 
+      - name: Configure location permissions and optional Google Maps key
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path('android/app/src/main/AndroidManifest.xml')
+          source = path.read_text()
+          permissions = [
+              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
+              '    <uses-permission android:name="android.permission.INTERNET" />',
+          ]
+          for permission in permissions:
+              if permission not in source:
+                  source = source.replace('    <application', permission + '\\n    <application', 1)
+          key = os.environ.get('GOOGLE_MAPS_API_KEY', '').strip()
+          if key:
+              metadata = f'        <meta-data android:name="com.google.android.geo.API_KEY" android:value="{key}" />'
+              if 'com.google.android.geo.API_KEY' not in source:
+                  source = source.replace('        <activity', metadata + '\\n        <activity', 1)
+          path.write_text(source)
+          PY
+
       - name: Configure Android ringtone picker bridge
         run: |
           python3 - <<'PY'
