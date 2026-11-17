@@ -71,10 +71,25 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
     } finally { if (mounted) setState(() => loadingLocation = false); }
   }
 
-  LatLng centroid(List<LatLng> points) => LatLng(
-    points.fold<double>(0, (s, p) => s + p.latitude) / points.length,
-    points.fold<double>(0, (s, p) => s + p.longitude) / points.length,
-  );
+  LatLng centroid(List<LatLng> points) {
+    // Polygon centroid in the local latitude/longitude plane (adequate for a house-sized plot).
+    double twiceArea = 0, cx = 0, cy = 0;
+    for (var i = 0; i < points.length; i++) {
+      final a = points[i];
+      final b = points[(i + 1) % points.length];
+      final cross = a.longitude * b.latitude - b.longitude * a.latitude;
+      twiceArea += cross;
+      cx += (a.longitude + b.longitude) * cross;
+      cy += (a.latitude + b.latitude) * cross;
+    }
+    if (twiceArea.abs() < 1e-12) {
+      return LatLng(
+        points.fold<double>(0, (s, p) => s + p.latitude) / points.length,
+        points.fold<double>(0, (s, p) => s + p.longitude) / points.length,
+      );
+    }
+    return LatLng(cy / (3 * twiceArea), cx / (3 * twiceArea));
+  }
 
   void addBoundary(LatLng point) {
     setState(() { boundary.add(point); houseCentre = boundary.length >= 3 ? centroid(boundary) : null; });
@@ -291,7 +306,9 @@ class _DegreeCompassPainter extends CustomPainter {
       final a = d * math.pi / 180 - math.pi / 2;
       final p1 = Offset(c.dx + inner * math.cos(a), c.dy + inner * math.sin(a));
       final p2 = Offset(c.dx + outer * math.cos(a), c.dy + outer * math.sin(a));
-      final tickPaint = Paint()..color = major ? ink : const Color(0xFF9B8063)..strokeWidth = major ? 1.4 : medium ? .9 : .45;
+      final tickPaint = Paint();
+      tickPaint.color = major ? ink : const Color(0xFF9B8063);
+      tickPaint.strokeWidth = major ? 1.4 : medium ? .9 : .45;
       canvas.drawLine(p1, p2, tickPaint);
       if (major) _draw(canvas, '$d', Offset(c.dx + r * .74 * math.cos(a), c.dy + r * .74 * math.sin(a)), r * .045, ink, true);
     }
