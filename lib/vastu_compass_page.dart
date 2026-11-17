@@ -48,7 +48,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   }
 
   @override
-  void dispose() { super.dispose(); }
+  void dispose() { mapController?.dispose(); super.dispose(); }
 
   Future<void> getLocation() async {
     setState(() { loadingLocation = true; locationMessage = null; });
