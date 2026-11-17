@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -29,6 +30,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   bool hasHeading = false;
   bool loadingLocation = false;
   bool satellite = true;
+  bool automaticDeclination = false;
   String? locationMessage;
 
   double get trueHeading => (heading + declination + 360) % 360;
@@ -61,7 +63,25 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.best, timeLimit: Duration(seconds: 20)),
       );
       if (!mounted) return;
-      setState(() { position = result; locationMessage = 'GPS accuracy लगभग \${result.accuracy.toStringAsFixed(1)} मीटर'; });
+      setState(() { position = result; locationMessage = 'GPS accuracy लगभग ${result.accuracy.toStringAsFixed(1)} मीटर'; });
+      try {
+        final value = await const MethodChannel('com.vedrahasya/geomagnetic').invokeMethod<double>(
+          'getDeclination',
+          {
+            'latitude': result.latitude,
+            'longitude': result.longitude,
+            'altitude': result.altitude,
+            'timeMillis': DateTime.now().millisecondsSinceEpoch,
+          },
+        );
+        if (mounted && value != null && value.isFinite) {
+          setState(() { declination = value; automaticDeclination = true; });
+        }
+      } on PlatformException {
+        if (mounted) setState(() => automaticDeclination = false);
+      } on MissingPluginException {
+        if (mounted) setState(() => automaticDeclination = false);
+      }
       if (mapsReady) {
         await mapController?.animateCamera(CameraUpdate.newLatLngZoom(
           LatLng(result.latitude, result.longitude), 19));
@@ -107,7 +127,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('पहले GPS लोकेशन प्राप्त करें या घर का centre चुनें।')));
       return;
     }
-    final uri = Uri.parse('https://earth.google.com/web/@\${point.latitude},\${point.longitude},120a,800d,35y,0h,0t,0r');
+    final uri = Uri.parse('https://earth.google.com/web/@${point.latitude},${point.longitude},120a,800d,35y,0h,0t,0r');
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
@@ -132,7 +152,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   Widget compassCard() => Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
     const Text('लाइव 360° वास्तु कम्पास', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ink)),
     const SizedBox(height: 5),
-    Text(hasHeading ? '\${direction(trueHeading)}  •  \${trueHeading.toStringAsFixed(1)}°' : 'कम्पास सेंसर की प्रतीक्षा…',
+    Text(hasHeading ? '${direction(trueHeading)}  •  ${trueHeading.toStringAsFixed(1)}°' : 'कम्पास सेंसर की प्रतीक्षा…',
       style: const TextStyle(color: gold, fontSize: 16, fontWeight: FontWeight.w800)),
     const SizedBox(height: 8),
     AspectRatio(aspectRatio: 1, child: CustomPaint(
@@ -159,8 +179,8 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
         const SizedBox(height: 10),
         infoRow('Latitude', position!.latitude.toStringAsFixed(7)),
         infoRow('Longitude', position!.longitude.toStringAsFixed(7)),
-        infoRow('GPS accuracy', '\${position!.accuracy.toStringAsFixed(1)} m'),
-        infoRow('Altitude', '\${position!.altitude.toStringAsFixed(1)} m'),
+        infoRow('GPS accuracy', '${position!.accuracy.toStringAsFixed(1)} m'),
+        infoRow('Altitude', '${position!.altitude.toStringAsFixed(1)} m'),
       ],
       if (locationMessage != null) Padding(padding: const EdgeInsets.only(top: 8),
         child: Text(locationMessage!, style: const TextStyle(color: Colors.brown, fontSize: 12))),
@@ -190,7 +210,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
             fillColor: Colors.orange.withValues(alpha: .18), strokeColor: Colors.deepOrange, strokeWidth: 3)} : {},
           markers: {
             for (var i = 0; i < boundary.length; i++) Marker(markerId: MarkerId('corner-$i'), position: boundary[i],
-              infoWindow: InfoWindow(title: 'Boundary point \${i + 1}')),
+              infoWindow: InfoWindow(title: 'Boundary point ${i + 1}')),
             if (houseCentre != null) Marker(markerId: const MarkerId('centre'), position: houseCentre!,
               icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure), draggable: true,
               infoWindow: const InfoWindow(title: 'House centre'),
@@ -216,7 +236,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
         OutlinedButton.icon(onPressed: houseCentre == null ? null : () => mapController?.animateCamera(CameraUpdate.newLatLngZoom(houseCentre!, 20)),
           icon: const Icon(Icons.center_focus_strong), label: const Text('Centre पर जाएँ')),
       ]),
-      Text('Boundary points: \${boundary.length}', style: const TextStyle(fontSize: 11, color: Colors.brown)),
+      Text('Boundary points: ${boundary.length}', style: const TextStyle(fontSize: 11, color: Colors.brown)),
     ],
   )));
 
@@ -243,7 +263,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
                 style: TextStyle(fontSize: 10, backgroundColor: Colors.white70))),
             ])))),
         Row(children: [const Text('Map rotation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-          const Spacer(), Text('\${planRotation.toStringAsFixed(1)}°', style: const TextStyle(fontWeight: FontWeight.bold))]),
+          const Spacer(), Text('${planRotation.toStringAsFixed(1)}°', style: const TextStyle(fontWeight: FontWeight.bold))]),
         Slider(min: -180, max: 180, divisions: 720, value: planRotation.clamp(-180, 180),
           onChanged: (v) => setState(() => planRotation = v)),
         Wrap(spacing: 6, children: [
@@ -261,16 +281,17 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
     crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text('North Calibration & Declination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
       const SizedBox(height: 5),
-      const Text('फोन का compass magnetic north बताता है। स्थानीय declination की verified value डालकर true-north correction करें। इस build में automatic geomagnetic model अभी जोड़ा नहीं गया है।',
+      const Text('फोन का compass magnetic north बताता है। GPS लोकेशन मिलने पर Android के geomagnetic model से स्थानीय declination अपने-आप निकाली जाती है। जरूरत पर नीचे manual correction भी कर सकते हैं।',
         style: TextStyle(fontSize: 12, height: 1.45, color: Colors.brown)),
-      Row(children: [const Expanded(child: Text('Manual declination correction', style: TextStyle(fontSize: 12))),
-        Text('\${declination.toStringAsFixed(1)}°', style: const TextStyle(fontWeight: FontWeight.bold, color: gold))]),
+      Text(automaticDeclination ? 'Automatic geomagnetic correction सक्रिय' : 'Manual correction mode', style: TextStyle(fontSize: 11, color: automaticDeclination ? Colors.green : Colors.deepOrange, fontWeight: FontWeight.w600)),
+      Row(children: [const Expanded(child: Text('Declination correction', style: TextStyle(fontSize: 12))),
+        Text('${declination.toStringAsFixed(1)}°', style: const TextStyle(fontWeight: FontWeight.bold, color: gold))]),
       Slider(min: -30, max: 30, divisions: 600, value: declination, onChanged: (v) => setState(() => declination = v)),
       Row(children: [
         Expanded(child: OutlinedButton(onPressed: () => setState(() => declination = 0), child: const Text('Reset correction'))),
         const SizedBox(width: 8),
         Expanded(child: FilledButton(onPressed: planImage == null ? null : () {
-          setState(() => planRotation = (-trueHeading + 360) % 360);
+          setState(() => planRotation = (trueHeading) % 360);
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan को compass north के अनुसार rotate किया गया।')));
         }, child: const Text('Align plan to North'))),
       ]),
@@ -319,7 +340,7 @@ class _DegreeCompassPainter extends CustomPainter {
     canvas.drawCircle(c, r * .43, Paint()..color = const Color(0xFFFFF8E9));
     canvas.drawCircle(c, r * .43, Paint()..style = PaintingStyle.stroke..color = gold..strokeWidth = 1.4);
     _draw(canvas, 'VASTU', Offset(c.dx, c.dy - r * .07), r * .10, ink, true);
-    _draw(canvas, hasHeading ? '\${heading.toStringAsFixed(1)}°' : '--°', Offset(c.dx, c.dy + r * .10), r * .075, gold, true);
+    _draw(canvas, hasHeading ? '${heading.toStringAsFixed(1)}°' : '--°', Offset(c.dx, c.dy + r * .10), r * .075, gold, true);
     canvas.restore();
     canvas.drawLine(Offset(c.dx, c.dy - r * .98), Offset(c.dx, c.dy - r * .78),
       Paint()..color = Colors.red.shade700..strokeWidth = 2.5..strokeCap = StrokeCap.round);
