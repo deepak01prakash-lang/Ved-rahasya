@@ -14,6 +14,7 @@ import 'account_page.dart';
 import 'firebase_config.dart';
 import 'devotional_media_page.dart';
 import 'vastu_compass_page.dart';
+import 'ai_video_creator_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -482,6 +483,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ]),
         ),
+        heading('AI क्रिएटर स्टूडियो', 'वेद रहस्य के लिए सिनेमैटिक वीडियो बनाएँ'),
+        sectionCard(
+          title: 'AI Video Creator Studio',
+          subtitle: 'विषय या अपनी कहानी • Shorts और Long Video • हिंदी वॉइस',
+          icon: Icons.movie_creation_outlined, tint: const Color(0xFF8B4D20),
+          tag: 'NEW',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AiVideoCreatorPage()),
+          ),
+        ),
+        const SizedBox(height: 10),
         heading('ज्योतिष एवं पंचांग', 'अपनी जन्म-कुंडली और दैनिक ज्योतिषीय जानकारी'),
         sectionCard(
           title: 'मेरी जन्म-कुंडली',
