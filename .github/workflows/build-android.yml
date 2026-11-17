@@ -84,9 +84,7 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --project-name ved_rahasya --org com.vedrahasya .
 
-      - name: Configure location permissions and optional Google Maps key
-        env:
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+      - name: Configure Android location and internet permissions
         run: |
           python3 - <<'PY'
           import os
@@ -101,11 +99,6 @@ jobs:
           for permission in permissions:
               if permission not in source:
                   source = source.replace('    <application', permission + '\\n    <application', 1)
-          key = os.environ.get('GOOGLE_MAPS_API_KEY', '').strip()
-          if key:
-              metadata = f'        <meta-data android:name="com.google.android.geo.API_KEY" android:value="{key}" />'
-              if 'com.google.android.geo.API_KEY' not in source:
-                  source = source.replace('        <activity', metadata + '\\n        <activity', 1)
           path.write_text(source)
           PY
 
@@ -365,12 +358,11 @@ jobs:
         env:
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           ANDROID_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
           ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
           ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: |
-          flutter build appbundle --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID" --dart-define=GOOGLE_MAPS_API_KEY="$GOOGLE_MAPS_API_KEY"
+          flutter build appbundle --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID"
           flutter build apk --release --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID" --dart-define=GOOGLE_MAPS_API_KEY="$GOOGLE_MAPS_API_KEY"
 
       - name: Build Android test APK (debug signing fallback)
@@ -378,7 +370,6 @@ jobs:
         env:
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
         run: flutter build apk --debug --build-number=${{ github.run_number }} --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID" --dart-define=GOOGLE_MAPS_API_KEY="$GOOGLE_MAPS_API_KEY"
 
       - name: Upload Android build artifacts
