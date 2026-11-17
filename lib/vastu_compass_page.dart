@@ -171,12 +171,11 @@ class _VastuCompassPainter extends CustomPainter {
       ..lineTo(center.dx + 7, rect.top + 7)
       ..close();
     canvas.drawPath(arrowPath, northArrow);
-    canvas.restore();
-
     _text(canvas, 'N', Offset(center.dx, center.dy - radius - 12), 13, Colors.red.shade700, bold: true);
     _text(canvas, 'E', Offset(center.dx + radius + 12, center.dy), 13, _brown, bold: true);
     _text(canvas, 'S', Offset(center.dx, center.dy + radius + 12), 13, _brown, bold: true);
     _text(canvas, 'W', Offset(center.dx - radius - 12, center.dy), 13, _brown, bold: true);
+    canvas.restore();
   }
 
   void _text(Canvas canvas, String value, Offset center, double fontSize, Color color, {bool bold = false}) {
