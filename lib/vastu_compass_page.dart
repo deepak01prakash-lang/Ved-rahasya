@@ -77,7 +77,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   );
 
   void addBoundary(LatLng point) {
-    setState(() { boundary.add(point); houseCentre = centroid(boundary); });
+    setState(() { boundary.add(point); houseCentre = boundary.length >= 3 ? centroid(boundary) : null; });
   }
 
   Future<void> pickPlan() async {
@@ -232,9 +232,9 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
         Slider(min: -180, max: 180, divisions: 720, value: planRotation.clamp(-180, 180),
           onChanged: (v) => setState(() => planRotation = v)),
         Wrap(spacing: 6, children: [
-          TextButton.icon(onPressed: () => setState(() => planRotation = (planRotation - 1).clamp(-180, 180)),
+          TextButton.icon(onPressed: () => setState(() => planRotation = (planRotation - 1).clamp(-180, 180).toDouble()),
             icon: const Icon(Icons.rotate_left), label: const Text('−1°')),
-          TextButton.icon(onPressed: () => setState(() => planRotation = (planRotation + 1).clamp(-180, 180)),
+          TextButton.icon(onPressed: () => setState(() => planRotation = (planRotation + 1).clamp(-180, 180).toDouble()),
             icon: const Icon(Icons.rotate_right), label: const Text('+1°')),
           TextButton(onPressed: () => setState(() { planRotation = 0; planCentre = null; }), child: const Text('Reset')),
         ]),
@@ -291,7 +291,8 @@ class _DegreeCompassPainter extends CustomPainter {
       final a = d * math.pi / 180 - math.pi / 2;
       final p1 = Offset(c.dx + inner * math.cos(a), c.dy + inner * math.sin(a));
       final p2 = Offset(c.dx + outer * math.cos(a), c.dy + outer * math.sin(a));
-      canvas.drawLine(p1, p2, Paint()..color = major ? ink : const Color(0xFF9B8063)..strokeWidth = major ? 1.4 : medium ? .9 : .45);
+      final tickPaint = Paint()..color = major ? ink : const Color(0xFF9B8063)..strokeWidth = major ? 1.4 : medium ? .9 : .45;
+      canvas.drawLine(p1, p2, tickPaint);
       if (major) _draw(canvas, '$d', Offset(c.dx + r * .74 * math.cos(a), c.dy + r * .74 * math.sin(a)), r * .045, ink, true);
     }
     for (var i = 0; i < 16; i++) {
