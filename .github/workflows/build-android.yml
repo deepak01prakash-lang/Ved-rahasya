@@ -84,15 +84,13 @@ jobs:
       - name: Generate Android project
         run: flutter create --platforms=android --project-name ved_rahasya --org com.vedrahasya .
 
-      - name: Configure Android location and internet permissions
+      - name: Configure Android internet permission
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path('android/app/src/main/AndroidManifest.xml')
           source = path.read_text()
           permissions = [
-              '    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />',
-              '    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />',
               '    <uses-permission android:name="android.permission.INTERNET" />',
           ]
           for permission in permissions:
