@@ -1,195 +1,319 @@
+import 'dart:io';
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class VastuCompassPage extends StatelessWidget {
+class VastuCompassPage extends StatefulWidget {
   const VastuCompassPage({super.key});
+  @override
+  State<VastuCompassPage> createState() => _VastuCompassPageState();
+}
 
-  static const _ink = Color(0xFF492A17);
-  static const _gold = Color(0xFFB86B1B);
+class _VastuCompassPageState extends State<VastuCompassPage> {
+  static const ink = Color(0xFF492A17);
+  static const gold = Color(0xFFB86B1B);
+  static const mapsKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
+  Position? position;
+  GoogleMapController? mapController;
+  final List<LatLng> boundary = [];
+  LatLng? houseCentre;
+  File? planImage;
+  Offset? planCentre;
+  double planRotation = 0;
+  double declination = 0;
+  double heading = 0;
+  bool hasHeading = false;
+  bool loadingLocation = false;
+  bool satellite = true;
+  String? locationMessage;
 
-  String _direction(double heading) {
-    const directions = [
-      'उत्तर', 'उत्तर-उत्तर-पूर्व', 'ईशान', 'पूर्व-उत्तर-पूर्व',
-      'पूर्व', 'पूर्व-दक्षिण-पूर्व', 'आग्नेय', 'दक्षिण-दक्षिण-पूर्व',
-      'दक्षिण', 'दक्षिण-दक्षिण-पश्चिम', 'नैऋत्य', 'पश्चिम-दक्षिण-पश्चिम',
-      'पश्चिम', 'पश्चिम-उत्तर-पश्चिम', 'वायव्य', 'उत्तर-उत्तर-पश्चिम',
-    ];
-    final index = ((heading % 360) / 22.5).round() % 16;
-    return directions[index];
+  double get trueHeading => (heading + declination + 360) % 360;
+  bool get mapsReady => mapsKey.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    FlutterCompass.events?.listen((event) {
+      final value = event.heading;
+      if (!mounted || value == null || !value.isFinite) return;
+      setState(() { heading = (value + 360) % 360; hasHeading = true; });
+    });
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('वास्तु चक्र एवं कम्पास')),
-      body: StreamBuilder<CompassEvent>(
-        stream: FlutterCompass.events,
-        builder: (context, snapshot) {
-          final heading = snapshot.data?.heading;
-          final available = heading != null && heading.isFinite;
-          final safeHeading = available ? heading! : 0.0;
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 18, 12, 16),
-                  child: Column(
-                    children: [
-                      const Text('लाइव दिशा के साथ वास्तु पुरुष मंडल',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: _ink)),
-                      const SizedBox(height: 6),
-                      Text(
-                        available ? '${_direction(safeHeading)}  •  ${safeHeading.toStringAsFixed(0)}°'
-                          : 'कम्पास सेंसर से दिशा प्राप्त की जा रही है…',
-                        style: const TextStyle(fontSize: 15, color: _gold, fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 14),
-                      AspectRatio(
-                        aspectRatio: 1,
-                        child: CustomPaint(
-                          painter: _VastuCompassPainter(heading: safeHeading),
-                          child: const SizedBox.expand(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.explore, color: _gold),
-                          const SizedBox(width: 7),
-                          Text(available ? 'कम्पास सक्रिय' : 'कम्पास उपलब्ध नहीं',
-                            style: TextStyle(
-                              color: available ? Colors.green.shade700 : Colors.deepOrange,
-                              fontWeight: FontWeight.w600,
-                            )),
-                        ],
-                      ),
-                      if (!available)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8),
-                          child: Text(
-                            'यदि आपके फोन में कम्पास सेंसर नहीं है, तो लाइव दिशा उपलब्ध नहीं होगी। फोन को धीरे-धीरे घुमाएँ और मैग्नेटिक कवर/चुंबक से दूर रखें।',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, height: 1.5, color: Colors.brown),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-                    Text('दिशा पहचान', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _ink)),
-                    SizedBox(height: 8),
-                    Text('• उत्तर (N) — 337.5° से 22.5°\n'
-                      '• ईशान — 22.5° से 67.5°\n'
-                      '• पूर्व (E) — 67.5° से 112.5°\n'
-                      '• आग्नेय — 112.5° से 157.5°\n'
-                      '• दक्षिण (S) — 157.5° से 202.5°\n'
-                      '• नैऋत्य — 202.5° से 247.5°\n'
-                      '• पश्चिम (W) — 247.5° से 292.5°\n'
-                      '• वायव्य — 292.5° से 337.5°',
-                      style: TextStyle(height: 1.75, color: Colors.brown)),
-                  ]),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                child: Text(
-                  'नोट: यह दिशा-सहायक टूल है। चुंबकीय कम्पास में स्थानीय magnetic declination और फोन सेंसर की calibration के कारण अंतर हो सकता है। सटीक भवन-निर्णय से पहले वास्तविक उत्तर दिशा की पुष्टि करें।',
-                  style: TextStyle(fontSize: 11, height: 1.5, color: Colors.brown),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+  void dispose() { mapController?.dispose(); super.dispose(); }
+
+  Future<void> getLocation() async {
+    setState(() { loadingLocation = true; locationMessage = null; });
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception('फोन की Location/GPS सुविधा बंद है।');
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) throw Exception('लोकेशन की अनुमति नहीं मिली।');
+      if (permission == LocationPermission.deniedForever) throw Exception('Settings में जाकर लोकेशन अनुमति चालू करें।');
+      final result = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.best, timeLimit: Duration(seconds: 20)),
+      );
+      if (!mounted) return;
+      setState(() { position = result; locationMessage = 'GPS accuracy लगभग \${result.accuracy.toStringAsFixed(1)} मीटर'; });
+      if (mapsReady) {
+        await mapController?.animateCamera(CameraUpdate.newLatLngZoom(
+          LatLng(result.latitude, result.longitude), 19));
+      }
+    } catch (e) {
+      if (mounted) setState(() => locationMessage = e.toString().replaceFirst('Exception: ', ''));
+    } finally { if (mounted) setState(() => loadingLocation = false); }
   }
+
+  LatLng centroid(List<LatLng> points) => LatLng(
+    points.fold<double>(0, (s, p) => s + p.latitude) / points.length,
+    points.fold<double>(0, (s, p) => s + p.longitude) / points.length,
+  );
+
+  void addBoundary(LatLng point) {
+    setState(() { boundary.add(point); houseCentre = centroid(boundary); });
+  }
+
+  Future<void> pickPlan() async {
+    final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 95);
+    if (file == null || !mounted) return;
+    setState(() { planImage = File(file.path); planCentre = null; planRotation = 0; });
+  }
+
+  Future<void> openEarth() async {
+    final point = houseCentre ?? (position == null ? null : LatLng(position!.latitude, position!.longitude));
+    if (point == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('पहले GPS लोकेशन प्राप्त करें या घर का centre चुनें।')));
+      return;
+    }
+    final uri = Uri.parse('https://earth.google.com/web/@\${point.latitude},\${point.longitude},120a,800d,35y,0h,0t,0r');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  String direction(double degrees) {
+    const names = ['उत्तर','उत्तर-उत्तर-पूर्व','ईशान','पूर्व-उत्तर-पूर्व','पूर्व','पूर्व-दक्षिण-पूर्व','आग्नेय','दक्षिण-दक्षिण-पूर्व','दक्षिण','दक्षिण-दक्षिण-पश्चिम','नैऋत्य','पश्चिम-दक्षिण-पश्चिम','पश्चिम','पश्चिम-उत्तर-पश्चिम','वायव्य','उत्तर-उत्तर-पश्चिम'];
+    return names[((degrees % 360) / 22.5).round() % 16];
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('360° वास्तु हाउस एनालाइज़र'),
+      actions: [IconButton(tooltip: 'Google Earth में खोलें', onPressed: openEarth, icon: const Icon(Icons.public))]),
+    body: ListView(padding: const EdgeInsets.all(14), children: [
+      compassCard(), const SizedBox(height: 12), locationCard(), const SizedBox(height: 12),
+      mapCard(), const SizedBox(height: 12), planCard(), const SizedBox(height: 12),
+      calibrationCard(), const SizedBox(height: 10),
+      const Text('महत्वपूर्ण: GPS से मिला स्थान और नक्शे का centre अलग-अलग चीजें हैं। Boundary स्वयं जाँचें। फोन का magnetometer चुंबकीय व्यवधान से प्रभावित हो सकता है। यह दिशा-सहायक माप है, सर्वेक्षण-स्तर की गारंटी नहीं।',
+        style: TextStyle(fontSize: 11, height: 1.55, color: Colors.brown)),
+    ]),
+  );
+
+  Widget compassCard() => Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
+    const Text('लाइव 360° वास्तु कम्पास', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ink)),
+    const SizedBox(height: 5),
+    Text(hasHeading ? '\${direction(trueHeading)}  •  \${trueHeading.toStringAsFixed(1)}°' : 'कम्पास सेंसर की प्रतीक्षा…',
+      style: const TextStyle(color: gold, fontSize: 16, fontWeight: FontWeight.w800)),
+    const SizedBox(height: 8),
+    AspectRatio(aspectRatio: 1, child: CustomPaint(
+      painter: _DegreeCompassPainter(heading: trueHeading, hasHeading: hasHeading), child: const SizedBox.expand())),
+    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(hasHeading ? Icons.explore : Icons.explore_off, color: hasHeading ? Colors.green : Colors.deepOrange),
+      const SizedBox(width: 7), Text(hasHeading ? 'कम्पास सेंसर सक्रिय' : 'Sensor signal उपलब्ध नहीं'),
+    ]),
+  ])));
+
+  Widget infoRow(String label, String value) => Padding(padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(children: [Expanded(child: Text(label, style: const TextStyle(color: Colors.brown, fontSize: 12))),
+      SelectableText(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))]));
+
+  Widget locationCard() => Card(child: Padding(padding: const EdgeInsets.all(15), child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('घर की लोकेशन एवं GPS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
+      const SizedBox(height: 10),
+      SizedBox(width: double.infinity, child: FilledButton.icon(
+        onPressed: loadingLocation ? null : getLocation,
+        icon: loadingLocation ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.my_location),
+        label: Text(loadingLocation ? 'लोकेशन प्राप्त हो रही है…' : 'मेरी वर्तमान लोकेशन प्राप्त करें'))),
+      if (position != null) ...[
+        const SizedBox(height: 10),
+        infoRow('Latitude', position!.latitude.toStringAsFixed(7)),
+        infoRow('Longitude', position!.longitude.toStringAsFixed(7)),
+        infoRow('GPS accuracy', '\${position!.accuracy.toStringAsFixed(1)} m'),
+        infoRow('Altitude', '\${position!.altitude.toStringAsFixed(1)} m'),
+      ],
+      if (locationMessage != null) Padding(padding: const EdgeInsets.only(top: 8),
+        child: Text(locationMessage!, style: const TextStyle(color: Colors.brown, fontSize: 12))),
+      if (houseCentre != null) ...[
+        const Divider(height: 20),
+        const Text('घर का चुना हुआ centre', style: TextStyle(fontWeight: FontWeight.bold, color: ink)),
+        infoRow('Centre latitude', houseCentre!.latitude.toStringAsFixed(7)),
+        infoRow('Centre longitude', houseCentre!.longitude.toStringAsFixed(7)),
+      ],
+    ],
+  )));
+
+  Widget mapCard() => Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Google Maps • Satellite House Boundary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
+      const SizedBox(height: 5),
+      const Text('घर के बाहरी कोनों को क्रम से टैप करें। 3 या अधिक बिंदुओं के बाद centre का अनुमान निकलेगा; नीले marker को खींचकर centre सुधारें।',
+        style: TextStyle(fontSize: 12, height: 1.45, color: Colors.brown)),
+      const SizedBox(height: 10),
+      if (mapsReady) SizedBox(height: 320, child: ClipRRect(borderRadius: BorderRadius.circular(14),
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(target: position == null ? const LatLng(23.7957, 86.4304) : LatLng(position!.latitude, position!.longitude), zoom: 18),
+          mapType: satellite ? MapType.satellite : MapType.hybrid,
+          myLocationEnabled: position != null, myLocationButtonEnabled: true, zoomControlsEnabled: true,
+          onMapCreated: (c) => mapController = c, onTap: addBoundary,
+          polygons: boundary.length >= 3 ? {Polygon(polygonId: const PolygonId('house'), points: boundary,
+            fillColor: Colors.orange.withValues(alpha: .18), strokeColor: Colors.deepOrange, strokeWidth: 3)} : {},
+          markers: {
+            for (var i = 0; i < boundary.length; i++) Marker(markerId: MarkerId('corner-$i'), position: boundary[i],
+              infoWindow: InfoWindow(title: 'Boundary point \${i + 1}')),
+            if (houseCentre != null) Marker(markerId: const MarkerId('centre'), position: houseCentre!,
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure), draggable: true,
+              infoWindow: const InfoWindow(title: 'House centre'),
+              onDragEnd: (v) => setState(() => houseCentre = v)),
+          },
+        )))
+      else Container(height: 180, width: double.infinity, decoration: BoxDecoration(
+        color: const Color(0xFFFFF2DF), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE7D2B4))),
+        child: const Padding(padding: EdgeInsets.all(16), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.map_outlined, size: 42, color: gold), SizedBox(height: 8),
+          Text('Google Maps API key configure करना बाकी है', textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, color: ink)),
+          SizedBox(height: 5),
+          Text('API key जोड़ने के बाद Satellite/Hybrid map सक्रिय होगा। GPS और uploaded floor plan अभी इस्तेमाल किए जा सकते हैं।',
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 11, height: 1.4, color: Colors.brown)),
+        ]))),
+      const SizedBox(height: 10),
+      Wrap(spacing: 8, runSpacing: 8, children: [
+        OutlinedButton.icon(onPressed: mapsReady ? () => setState(() => satellite = !satellite) : null,
+          icon: const Icon(Icons.layers), label: Text(satellite ? 'Hybrid View' : 'Satellite View')),
+        OutlinedButton.icon(onPressed: boundary.isEmpty ? null : () => setState(() { boundary.clear(); houseCentre = null; }),
+          icon: const Icon(Icons.delete_outline), label: const Text('Boundary हटाएँ')),
+        OutlinedButton.icon(onPressed: houseCentre == null ? null : () => mapController?.animateCamera(CameraUpdate.newLatLngZoom(houseCentre!, 20)),
+          icon: const Icon(Icons.center_focus_strong), label: const Text('Centre पर जाएँ')),
+      ]),
+      Text('Boundary points: \${boundary.length}', style: const TextStyle(fontSize: 11, color: Colors.brown)),
+    ],
+  )));
+
+  Widget planCard() => Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('घर का Floor Plan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
+      const SizedBox(height: 5),
+      const Text('Gallery से JPG/PNG नक्शा चुनें। नक्शे पर centre mark करें और rotation को compass reading के अनुसार adjust करें।',
+        style: TextStyle(fontSize: 12, height: 1.45, color: Colors.brown)),
+      const SizedBox(height: 10),
+      SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: pickPlan,
+        icon: const Icon(Icons.upload_file), label: Text(planImage == null ? 'Floor plan image अपलोड करें' : 'दूसरा नक्शा चुनें'))),
+      if (planImage != null) ...[
+        const SizedBox(height: 10),
+        GestureDetector(onTapDown: (d) => setState(() => planCentre = d.localPosition),
+          child: SizedBox(height: 290, width: double.infinity, child: ClipRRect(borderRadius: BorderRadius.circular(12),
+            child: Stack(alignment: Alignment.center, children: [
+              Container(color: const Color(0xFFF8F1E6)),
+              Transform.rotate(angle: planRotation * math.pi / 180,
+                child: Image.file(planImage!, fit: BoxFit.contain, width: double.infinity, height: 290)),
+              if (planCentre != null) Positioned(left: planCentre!.dx - 12, top: planCentre!.dy - 18,
+                child: const Icon(Icons.location_on, color: Colors.red, size: 30)),
+              const Positioned(bottom: 7, child: Text('नक्शे पर centre mark करने के लिए टैप करें',
+                style: TextStyle(fontSize: 10, backgroundColor: Colors.white70))),
+            ])))),
+        Row(children: [const Text('Map rotation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          const Spacer(), Text('\${planRotation.toStringAsFixed(1)}°', style: const TextStyle(fontWeight: FontWeight.bold))]),
+        Slider(min: -180, max: 180, divisions: 720, value: planRotation.clamp(-180, 180),
+          onChanged: (v) => setState(() => planRotation = v)),
+        Wrap(spacing: 6, children: [
+          TextButton.icon(onPressed: () => setState(() => planRotation = (planRotation - 1).clamp(-180, 180)),
+            icon: const Icon(Icons.rotate_left), label: const Text('−1°')),
+          TextButton.icon(onPressed: () => setState(() => planRotation = (planRotation + 1).clamp(-180, 180)),
+            icon: const Icon(Icons.rotate_right), label: const Text('+1°')),
+          TextButton(onPressed: () => setState(() { planRotation = 0; planCentre = null; }), child: const Text('Reset')),
+        ]),
+      ],
+    ],
+  )));
+
+  Widget calibrationCard() => Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('North Calibration & Declination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
+      const SizedBox(height: 5),
+      const Text('फोन का compass magnetic north बताता है। स्थानीय declination की verified value डालकर true-north correction करें। इस build में automatic geomagnetic model अभी जोड़ा नहीं गया है।',
+        style: TextStyle(fontSize: 12, height: 1.45, color: Colors.brown)),
+      Row(children: [const Expanded(child: Text('Manual declination correction', style: TextStyle(fontSize: 12))),
+        Text('\${declination.toStringAsFixed(1)}°', style: const TextStyle(fontWeight: FontWeight.bold, color: gold))]),
+      Slider(min: -30, max: 30, divisions: 600, value: declination, onChanged: (v) => setState(() => declination = v)),
+      Row(children: [
+        Expanded(child: OutlinedButton(onPressed: () => setState(() => declination = 0), child: const Text('Reset correction'))),
+        const SizedBox(width: 8),
+        Expanded(child: FilledButton(onPressed: planImage == null ? null : () {
+          setState(() => planRotation = (-trueHeading + 360) % 360);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan को compass north के अनुसार rotate किया गया।')));
+        }, child: const Text('Align plan to North'))),
+      ]),
+      if (!hasHeading) const Text('Sensor unavailable होने पर manual rotation का उपयोग करें।',
+        style: TextStyle(fontSize: 11, color: Colors.deepOrange)),
+    ],
+  )));
 }
 
-class _VastuCompassPainter extends CustomPainter {
-  const _VastuCompassPainter({required this.heading});
+class _DegreeCompassPainter extends CustomPainter {
+  const _DegreeCompassPainter({required this.heading, required this.hasHeading});
   final double heading;
-
-  static const _brown = Color(0xFF754414);
-  static const _gold = Color(0xFFB86B1B);
+  final bool hasHeading;
+  static const ink = Color(0xFF492A17);
+  static const gold = Color(0xFFB86B1B);
+  static const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) * .43;
-    final gridSize = radius * 1.48;
-    final rect = Rect.fromCenter(center: center, width: gridSize, height: gridSize);
-
-    final ring = Paint()..color = _gold..style = PaintingStyle.stroke..strokeWidth = 2;
-    canvas.drawCircle(center, radius, ring);
-    canvas.drawCircle(center, radius * .91, Paint()
-      ..color = const Color(0xFFE9D5B7)..style = PaintingStyle.stroke..strokeWidth = 1);
-
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = math.min(size.width, size.height) * .44;
+    canvas.drawCircle(c, r, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.5..color = gold);
+    canvas.drawCircle(c, r * .91, Paint()..style = PaintingStyle.stroke..color = const Color(0xFFD9BE98));
     canvas.save();
-    canvas.translate(center.dx, center.dy);
+    canvas.translate(c.dx, c.dy);
     canvas.rotate(-heading * math.pi / 180);
-    canvas.translate(-center.dx, -center.dy);
-
-    final gridFill = Paint()..color = const Color(0xFFFFF8E9);
-    canvas.drawRect(rect, gridFill);
-    final line = Paint()..color = const Color(0xFFB98A58)..style = PaintingStyle.stroke..strokeWidth = .8;
-    final cell = gridSize / 9;
-    for (var i = 0; i <= 9; i++) {
-      final offset = i * cell;
-      canvas.drawLine(Offset(rect.left + offset, rect.top), Offset(rect.left + offset, rect.bottom), line);
-      canvas.drawLine(Offset(rect.left, rect.top + offset), Offset(rect.right, rect.top + offset), line);
+    canvas.translate(-c.dx, -c.dy);
+    for (var d = 0; d < 360; d++) {
+      final major = d % 10 == 0;
+      final medium = d % 5 == 0;
+      final inner = r * (major ? .82 : medium ? .86 : .89);
+      final outer = r * .91;
+      final a = d * math.pi / 180 - math.pi / 2;
+      final p1 = Offset(c.dx + inner * math.cos(a), c.dy + inner * math.sin(a));
+      final p2 = Offset(c.dx + outer * math.cos(a), c.dy + outer * math.sin(a));
+      canvas.drawLine(p1, p2, Paint()..color = major ? ink : const Color(0xFF9B8063)..strokeWidth = major ? 1.4 : medium ? .9 : .45);
+      if (major) _draw(canvas, '$d', Offset(c.dx + r * .74 * math.cos(a), c.dy + r * .74 * math.sin(a)), r * .045, ink, true);
     }
-    final centerCell = Rect.fromLTWH(rect.left + 4 * cell, rect.top + 4 * cell, cell, cell);
-    canvas.drawRect(centerCell, Paint()..color = const Color(0xFFFFE4AE));
-    _text(canvas, 'ब्रह्मस्थान', centerCell.center, cell * .19, _brown, bold: true);
-
-    const labels = [
-      ['ई', 4, 0], ['आ', 8, 4], ['प', 4, 8], ['उ', 0, 4],
-      ['ईशान', 0, 0], ['आग्नेय', 8, 0], ['नैऋत्य', 8, 8], ['वायव्य', 0, 8],
-    ];
-    for (final item in labels) {
-      final x = item[1] as int;
-      final y = item[2] as int;
-      final cellRect = Rect.fromLTWH(rect.left + x * cell, rect.top + y * cell, cell, cell);
-      canvas.drawRect(cellRect, Paint()..color = const Color(0xFFFFEED2));
-      _text(canvas, item[0] as String, cellRect.center, cell * .18, _brown, bold: true);
+    for (var i = 0; i < 16; i++) {
+      final a = (i * 22.5) * math.pi / 180 - math.pi / 2;
+      _draw(canvas, dirs[i], Offset(c.dx + r * .60 * math.cos(a), c.dy + r * .60 * math.sin(a)), r * .052, i % 4 == 0 ? Colors.red.shade800 : gold, true);
     }
-
-    final northArrow = Paint()..color = Colors.red.shade700..style = PaintingStyle.fill;
-    final arrowPath = Path()
-      ..moveTo(center.dx, rect.top - radius * .10)
-      ..lineTo(center.dx - 7, rect.top + 7)
-      ..lineTo(center.dx + 7, rect.top + 7)
-      ..close();
-    canvas.drawPath(arrowPath, northArrow);
-    _text(canvas, 'N', Offset(center.dx, center.dy - radius - 12), 13, Colors.red.shade700, bold: true);
-    _text(canvas, 'E', Offset(center.dx + radius + 12, center.dy), 13, _brown, bold: true);
-    _text(canvas, 'S', Offset(center.dx, center.dy + radius + 12), 13, _brown, bold: true);
-    _text(canvas, 'W', Offset(center.dx - radius - 12, center.dy), 13, _brown, bold: true);
+    canvas.drawCircle(c, r * .43, Paint()..color = const Color(0xFFFFF8E9));
+    canvas.drawCircle(c, r * .43, Paint()..style = PaintingStyle.stroke..color = gold..strokeWidth = 1.4);
+    _draw(canvas, 'VASTU', Offset(c.dx, c.dy - r * .07), r * .10, ink, true);
+    _draw(canvas, hasHeading ? '\${heading.toStringAsFixed(1)}°' : '--°', Offset(c.dx, c.dy + r * .10), r * .075, gold, true);
     canvas.restore();
+    canvas.drawLine(Offset(c.dx, c.dy - r * .98), Offset(c.dx, c.dy - r * .78),
+      Paint()..color = Colors.red.shade700..strokeWidth = 2.5..strokeCap = StrokeCap.round);
+    canvas.drawCircle(c, 4, Paint()..color = ink);
   }
 
-  void _text(Canvas canvas, String value, Offset center, double fontSize, Color color, {bool bold = false}) {
-    final painter = TextPainter(
-      text: TextSpan(text: value, style: TextStyle(
-        color: color, fontSize: fontSize, fontWeight: bold ? FontWeight.bold : FontWeight.w500,
-      )),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-    )..layout(maxWidth: 100);
-    painter.paint(canvas, center - Offset(painter.width / 2, painter.height / 2));
+  void _draw(Canvas canvas, String text, Offset centre, double size, Color color, bool bold) {
+    final p = TextPainter(text: TextSpan(text: text, style: TextStyle(fontSize: size, color: color,
+      fontWeight: bold ? FontWeight.bold : FontWeight.w600)), textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center, maxLines: 1)..layout();
+    p.paint(canvas, centre - Offset(p.width / 2, p.height / 2));
   }
-
   @override
-  bool shouldRepaint(covariant _VastuCompassPainter oldDelegate) => oldDelegate.heading != heading;
+  bool shouldRepaint(covariant _DegreeCompassPainter old) => old.heading != heading || old.hasHeading != hasHeading;
 }
