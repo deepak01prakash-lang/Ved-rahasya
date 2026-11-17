@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -17,9 +18,9 @@ class VastuCompassPage extends StatefulWidget {
 class _VastuCompassPageState extends State<VastuCompassPage> {
   static const ink = Color(0xFF492A17);
   static const gold = Color(0xFFB86B1B);
-  static const mapsKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
   Position? position;
-  GoogleMapController? mapController;
+  MapController? mapController;
+  bool selectingCentre = false;
   final List<LatLng> boundary = [];
   LatLng? houseCentre;
   File? planImage;
@@ -34,11 +35,11 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   String? locationMessage;
 
   double get trueHeading => (heading + declination + 360) % 360;
-  bool get mapsReady => mapsKey.trim().isNotEmpty;
 
   @override
   void initState() {
     super.initState();
+    mapController = MapController();
     FlutterCompass.events?.listen((event) {
       final value = event.heading;
       if (!mounted || value == null || !value.isFinite) return;
@@ -47,7 +48,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   }
 
   @override
-  void dispose() { mapController?.dispose(); super.dispose(); }
+  void dispose() { super.dispose(); }
 
   Future<void> getLocation() async {
     setState(() { loadingLocation = true; locationMessage = null; });
@@ -82,10 +83,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
       } on MissingPluginException {
         if (mounted) setState(() => automaticDeclination = false);
       }
-      if (mapsReady) {
-        await mapController?.animateCamera(CameraUpdate.newLatLngZoom(
-          LatLng(result.latitude, result.longitude), 19));
-      }
+      mapController?.move(LatLng(result.latitude, result.longitude), 19);
     } catch (e) {
       if (mounted) setState(() => locationMessage = e.toString().replaceFirst('Exception: ', ''));
     } finally { if (mounted) setState(() => loadingLocation = false); }
@@ -112,7 +110,15 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   }
 
   void addBoundary(LatLng point) {
-    setState(() { boundary.add(point); houseCentre = boundary.length >= 3 ? centroid(boundary) : null; });
+    setState(() {
+      if (selectingCentre) {
+        houseCentre = point;
+        selectingCentre = false;
+      } else {
+        boundary.add(point);
+        houseCentre = boundary.length >= 3 ? centroid(boundary) : null;
+      }
+    });
   }
 
   Future<void> pickPlan() async {
@@ -195,48 +201,71 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
 
   Widget mapCard() => Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(
     crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Google Maps • Satellite House Boundary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
+      const Text('Satellite / Street Map • House Boundary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
       const SizedBox(height: 5),
-      const Text('घर के बाहरी कोनों को क्रम से टैप करें। 3 या अधिक बिंदुओं के बाद centre का अनुमान निकलेगा; नीले marker को खींचकर centre सुधारें।',
+      const Text('Satellite imagery के लिए Google API key या payment details नहीं चाहिए। घर के बाहरी कोनों को क्रम से टैप करें। 3 या अधिक बिंदुओं के बाद centre का अनुमान निकलेगा। Centre सुधारने के लिए “Centre चुनें” दबाकर सही जगह टैप करें।',
         style: TextStyle(fontSize: 12, height: 1.45, color: Colors.brown)),
       const SizedBox(height: 10),
-      if (mapsReady) SizedBox(height: 320, child: ClipRRect(borderRadius: BorderRadius.circular(14),
-        child: GoogleMap(
-          initialCameraPosition: CameraPosition(target: position == null ? const LatLng(23.7957, 86.4304) : LatLng(position!.latitude, position!.longitude), zoom: 18),
-          mapType: satellite ? MapType.satellite : MapType.hybrid,
-          myLocationEnabled: position != null, myLocationButtonEnabled: true, zoomControlsEnabled: true,
-          onMapCreated: (c) => mapController = c, onTap: addBoundary,
-          polygons: boundary.length >= 3 ? {Polygon(polygonId: const PolygonId('house'), points: boundary,
-            fillColor: Colors.orange.withValues(alpha: .18), strokeColor: Colors.deepOrange, strokeWidth: 3)} : {},
-          markers: {
-            for (var i = 0; i < boundary.length; i++) Marker(markerId: MarkerId('corner-$i'), position: boundary[i],
-              infoWindow: InfoWindow(title: 'Boundary point ${i + 1}')),
-            if (houseCentre != null) Marker(markerId: const MarkerId('centre'), position: houseCentre!,
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure), draggable: true,
-              infoWindow: const InfoWindow(title: 'House centre'),
-              onDragEnd: (v) => setState(() => houseCentre = v)),
-          },
-        )))
-      else Container(height: 180, width: double.infinity, decoration: BoxDecoration(
-        color: const Color(0xFFFFF2DF), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE7D2B4))),
-        child: const Padding(padding: EdgeInsets.all(16), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.map_outlined, size: 42, color: gold), SizedBox(height: 8),
-          Text('Google Maps API key configure करना बाकी है', textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold, color: ink)),
-          SizedBox(height: 5),
-          Text('API key जोड़ने के बाद Satellite/Hybrid map सक्रिय होगा। GPS और uploaded floor plan अभी इस्तेमाल किए जा सकते हैं।',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 11, height: 1.4, color: Colors.brown)),
-        ]))),
+      SizedBox(height: 320, child: ClipRRect(borderRadius: BorderRadius.circular(14),
+        child: FlutterMap(
+          mapController: mapController,
+          options: MapOptions(
+            initialCenter: position == null ? const LatLng(23.7957, 86.4304) : LatLng(position!.latitude, position!.longitude),
+            initialZoom: 18,
+            maxZoom: 20,
+            onTap: (tapPosition, point) => addBoundary(point),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: satellite
+                ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.vedrahasya.ved_rahasya',
+              maxZoom: satellite ? 19 : 19,
+            ),
+            if (boundary.length >= 3)
+              PolygonLayer(polygons: [
+                Polygon(points: boundary, color: Colors.orange.withValues(alpha: .18),
+                  borderColor: Colors.deepOrange, borderStrokeWidth: 3),
+              ]),
+            MarkerLayer(markers: [
+              for (var i = 0; i < boundary.length; i++)
+                Marker(point: boundary[i], width: 34, height: 40,
+                  child: const Icon(Icons.location_on, color: Colors.deepOrange, size: 32)),
+              if (houseCentre != null)
+                Marker(point: houseCentre!, width: 42, height: 48,
+                  child: const Icon(Icons.my_location, color: Colors.blue, size: 38)),
+              if (position != null)
+                Marker(point: LatLng(position!.latitude, position!.longitude), width: 26, height: 26,
+                  child: Container(decoration: BoxDecoration(color: Colors.blue.withValues(alpha: .2),
+                    shape: BoxShape.circle, border: Border.all(color: Colors.blue, width: 2)),
+                    child: const Icon(Icons.circle, color: Colors.blue, size: 9))),
+            ]),
+            RichAttributionWidget(attributions: satellite
+              ? [const TextSourceAttribution('Tiles © Esri — Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community')]
+              : [const TextSourceAttribution('© OpenStreetMap contributors')]),
+          ],
+        ))),
       const SizedBox(height: 10),
       Wrap(spacing: 8, runSpacing: 8, children: [
-        OutlinedButton.icon(onPressed: mapsReady ? () => setState(() => satellite = !satellite) : null,
-          icon: const Icon(Icons.layers), label: Text(satellite ? 'Hybrid View' : 'Satellite View')),
-        OutlinedButton.icon(onPressed: boundary.isEmpty ? null : () => setState(() { boundary.clear(); houseCentre = null; }),
+        OutlinedButton.icon(onPressed: () => setState(() => satellite = !satellite),
+          icon: const Icon(Icons.layers), label: Text(satellite ? 'Street Map' : 'Satellite View')),
+        OutlinedButton.icon(onPressed: boundary.isEmpty ? null : () => setState(() { boundary.clear(); houseCentre = null; selectingCentre = false; }),
           icon: const Icon(Icons.delete_outline), label: const Text('Boundary हटाएँ')),
-        OutlinedButton.icon(onPressed: houseCentre == null ? null : () => mapController?.animateCamera(CameraUpdate.newLatLngZoom(houseCentre!, 20)),
-          icon: const Icon(Icons.center_focus_strong), label: const Text('Centre पर जाएँ')),
+        OutlinedButton.icon(onPressed: boundary.length < 3 ? null : () => setState(() => selectingCentre = !selectingCentre),
+          icon: Icon(selectingCentre ? Icons.close : Icons.center_focus_strong),
+          label: Text(selectingCentre ? 'Centre चुनने के लिए Map टैप करें' : 'Centre चुनें')),
+        OutlinedButton.icon(onPressed: houseCentre == null ? null : () => mapController?.move(houseCentre!, 20),
+          icon: const Icon(Icons.zoom_in_map), label: const Text('Centre पर जाएँ')),
+        OutlinedButton.icon(onPressed: position == null ? null : () => mapController?.move(LatLng(position!.latitude, position!.longitude), 19),
+          icon: const Icon(Icons.my_location), label: const Text('मेरी लोकेशन')),
       ]),
+      if (selectingCentre)
+        const Padding(padding: EdgeInsets.only(top: 6), child: Text('अब नक्शे पर घर के बीचों-बीच टैप करें।',
+          style: TextStyle(fontSize: 11, color: Colors.deepOrange, fontWeight: FontWeight.w600))),
       Text('Boundary points: ${boundary.length}', style: const TextStyle(fontSize: 11, color: Colors.brown)),
+      const Text('Satellite tiles © Esri. Street map © OpenStreetMap contributors. इंटरनेट कनेक्शन आवश्यक है; imagery की तारीख और detail क्षेत्र के अनुसार बदल सकती है।',
+        style: TextStyle(fontSize: 10, color: Colors.brown, height: 1.4)),
     ],
   )));
 
