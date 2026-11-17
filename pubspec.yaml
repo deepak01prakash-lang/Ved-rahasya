@@ -22,7 +22,8 @@ dependencies:
   firebase_auth: ^6.7.1
   flutter_compass: ^0.8.1
   geolocator: ^14.0.2
-  google_maps_flutter: ^2.14.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
   image_picker: ^1.2.1
   url_launcher: ^6.3.2
 
