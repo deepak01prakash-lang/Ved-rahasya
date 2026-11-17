@@ -26,7 +26,8 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
   bool hasHeading = false;
   bool useManualNorth = false;
   bool showChakra = true;
-  Offset? planCentre;
+  final List<Offset> boundaryCorners = [];
+  Offset? get planCentre => boundaryCorners.length == 4 ? _diagonalIntersection(boundaryCorners) : null;
   String selectedMarker = 'मुख्य द्वार';
   final List<_PlanMarker> planMarkers = [];
 
@@ -65,7 +66,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
     if (file == null || !mounted) return;
     setState(() {
       planImage = File(file.path);
-      planCentre = null;
+      boundaryCorners.clear();
       planRotation = 0;
       planMarkers.clear();
     });
@@ -93,7 +94,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
               planRotation = 0;
               declination = 0;
               manualNorth = 0;
-              planCentre = null;
+              boundaryCorners.clear();
               planMarkers.clear();
             }),
             icon: const Icon(Icons.restart_alt),
@@ -247,7 +248,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
           const Text('घर का Floor Plan + Vastu Chakra', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ink)),
           const SizedBox(height: 5),
           const Text(
-            'साफ JPG/PNG नक्शा अपलोड करें। नक्शे पर टैप करके Centre मार्क करें। Vastu Chakra overlay से 9×9 पाद ग्रिड और ब्रह्मस्थान देखें।',
+            'साफ JPG/PNG नक्शा अपलोड करें। घर की बाहरी सीमा के चार कोने क्रम से (चारों तरफ घूमते हुए) टैप करें। ऐप दोनों diagonals का intersection निकालकर Centre अपने-आप मार्क करेगा। फिर कमरों की जगहें मार्क करें।',
             style: TextStyle(fontSize: 12, height: 1.45, color: Colors.brown),
           ),
           const SizedBox(height: 10),
@@ -288,8 +289,8 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
                       (local.dy / height).clamp(0.0, 1.0).toDouble(),
                     );
                     setState(() {
-                      if (planCentre == null) {
-                        planCentre = normalized;
+                      if (boundaryCorners.length < 4) {
+                        boundaryCorners.add(normalized);
                       } else {
                         planMarkers.add(_PlanMarker(selectedMarker, normalized));
                       }
@@ -309,6 +310,18 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
                             child: Image.file(planImage!, fit: BoxFit.contain),
                           ),
                           if (showChakra) CustomPaint(painter: _VastuGridPainter()),
+                          if (boundaryCorners.isNotEmpty)
+                            CustomPaint(painter: _BoundaryPainter(corners: boundaryCorners)),
+                          for (var i = 0; i < boundaryCorners.length; i++)
+                            Positioned(
+                              left: boundaryCorners[i].dx * width - 12,
+                              top: boundaryCorners[i].dy * height - 12,
+                              child: CircleAvatar(
+                                radius: 12,
+                                backgroundColor: Colors.blue.shade700,
+                                child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
                           if (planCentre != null)
                             Positioned(
                               left: planCentre!.dx * width - 12,
@@ -329,7 +342,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
                             left: 6,
                             right: 6,
                             child: Text(
-                              'पहला टैप: Centre  •  बाद के टैप: चुने हुए कमरे/स्थान',
+                              'पहले 4 टैप: घर के चार कोने क्रम से  •  फिर चुने हुए कमरे/स्थान',
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 10, backgroundColor: Color(0xCCFFFFFF)),
                             ),
@@ -371,7 +384,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
                 TextButton(
                   onPressed: () => setState(() {
                     planRotation = 0;
-                    planCentre = null;
+                    boundaryCorners.clear();
                     planMarkers.clear();
                   }),
                   child: const Text('Reset Plan'),
@@ -379,8 +392,32 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
               ],
             ),
             Text(
-              'Centre: ' + (planCentre == null ? 'अभी मार्क नहीं किया' : (planCentre!.dx * 100).toStringAsFixed(1) + '% X, ' + (planCentre!.dy * 100).toStringAsFixed(1) + '% Y'),
+              'Boundary corners: ${boundaryCorners.length}/4',
               style: const TextStyle(fontSize: 11, color: Colors.brown),
+            ),
+            Text(
+              'Centre: ' + (planCentre == null ? 'चारों कोने मार्क करें' : (planCentre!.dx * 100).toStringAsFixed(1) + '% X, ' + (planCentre!.dy * 100).toStringAsFixed(1) + '% Y  •  Diagonal intersection'),
+              style: const TextStyle(fontSize: 11, color: Colors.brown, fontWeight: FontWeight.w600),
+            ),
+            Wrap(
+              spacing: 6,
+              children: [
+                if (boundaryCorners.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () => setState(() => boundaryCorners.removeLast()),
+                    icon: const Icon(Icons.undo),
+                    label: const Text('अंतिम कोना हटाएँ'),
+                  ),
+                if (boundaryCorners.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () => setState(() {
+                      boundaryCorners.clear();
+                      planMarkers.clear();
+                    }),
+                    icon: const Icon(Icons.restart_alt),
+                    label: const Text('Boundary Reset'),
+                  ),
+              ],
             ),
             Text('Marked locations: ' + planMarkers.length.toString(), style: const TextStyle(fontSize: 11, color: Colors.brown)),
             if (planMarkers.isNotEmpty)
@@ -434,6 +471,64 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
       ],
     ),
   );
+}
+
+
+Offset? _diagonalIntersection(List<Offset> points) {
+  if (points.length != 4) return null;
+  final a = points[0];
+  final b = points[2];
+  final c = points[1];
+  final d = points[3];
+  final rx = b.dx - a.dx;
+  final ry = b.dy - a.dy;
+  final sx = d.dx - c.dx;
+  final sy = d.dy - c.dy;
+  final denominator = rx * sy - ry * sx;
+  if (denominator.abs() < 1e-8) return null;
+  final qpx = c.dx - a.dx;
+  final qpy = c.dy - a.dy;
+  final t = (qpx * sy - qpy * sx) / denominator;
+  final u = (qpx * ry - qpy * rx) / denominator;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  return Offset(a.dx + t * rx, a.dy + t * ry);
+}
+
+class _BoundaryPainter extends CustomPainter {
+  const _BoundaryPainter({required this.corners});
+  final List<Offset> corners;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (corners.isEmpty) return;
+    final points = corners.map((p) => Offset(p.dx * size.width, p.dy * size.height)).toList();
+    final outline = Paint()
+      ..color = Colors.blue.shade700
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final point in points.skip(1)) {
+      path.lineTo(point.dx, point.dy);
+    }
+    if (points.length == 4) path.close();
+    canvas.drawPath(path, outline);
+    if (points.length == 4) {
+      final diagonal = Paint()
+        ..color = Colors.red.shade600
+        ..strokeWidth = 1.8;
+      canvas.drawLine(points[0], points[2], diagonal);
+      canvas.drawLine(points[1], points[3], diagonal);
+      final centre = _diagonalIntersection(corners);
+      if (centre != null) {
+        final c = Offset(centre.dx * size.width, centre.dy * size.height);
+        canvas.drawCircle(c, 8, Paint()..color = Colors.red.shade700);
+        canvas.drawCircle(c, 12, Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 2);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BoundaryPainter oldDelegate) => oldDelegate.corners != corners;
 }
 
 class _PlanMarker {
