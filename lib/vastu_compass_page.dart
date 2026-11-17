@@ -191,7 +191,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
               min: 0,
               max: 359,
               divisions: 359,
-              value: manualNorth.clamp(0, 359),
+              value: manualNorth.clamp(0, 359).toDouble(),
               onChanged: (value) => setState(() => manualNorth = value),
             ),
             Wrap(
@@ -284,8 +284,8 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
                   onTapDown: (details) {
                     final local = details.localPosition;
                     final normalized = Offset(
-                      (local.dx / width).clamp(0.0, 1.0),
-                      (local.dy / height).clamp(0.0, 1.0),
+                      (local.dx / width).clamp(0.0, 1.0).toDouble(),
+                      (local.dy / height).clamp(0.0, 1.0).toDouble(),
                     );
                     setState(() {
                       if (planCentre == null) {
@@ -352,7 +352,7 @@ class _VastuCompassPageState extends State<VastuCompassPage> {
               min: -180,
               max: 180,
               divisions: 720,
-              value: planRotation.clamp(-180, 180),
+              value: planRotation.clamp(-180, 180).toDouble(),
               onChanged: (value) => setState(() => planRotation = value),
             ),
             Wrap(
