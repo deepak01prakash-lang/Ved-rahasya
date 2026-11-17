@@ -13,6 +13,7 @@ import 'meditation_page.dart';
 import 'account_page.dart';
 import 'firebase_config.dart';
 import 'devotional_media_page.dart';
+import 'vastu_compass_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -501,6 +502,17 @@ class _HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(builder: (_) => const PanchangPage()),
           ),
         ),
+        heading('वास्तु एवं दिशा ज्ञान', 'लाइव कम्पास के साथ वास्तु पुरुष मंडल'),
+        sectionCard(
+          title: 'वास्तु चक्र एवं लाइव कम्पास',
+          subtitle: '81 खानों का वास्तु मंडल • 16 दिशाएँ • डिग्री के साथ लाइव दिशा',
+          icon: Icons.explore_rounded, tint: const Color(0xFFB86B1B),
+          tag: 'LIVE',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const VastuCompassPage()),
+          ),
+        ),
+        const SizedBox(height: 10),
         heading('भक्ति मीडिया', 'वॉलपेपर • रिंगटोन • आरती • ध्यान संगीत'),
         sectionCard(
           title: 'भगवान के वॉलपेपर',
