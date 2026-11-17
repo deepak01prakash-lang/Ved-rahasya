@@ -29,6 +29,8 @@ jobs:
         run: flutter create --platforms=android --project-name ved_rahasya_video_studio --org com.vedrahasya .
       - name: Get dependencies
         run: flutter pub get
+      - name: Remove generated template test
+        run: rm -f test/widget_test.dart
       - name: Analyze
         run: flutter analyze
       - name: Build debug APK
